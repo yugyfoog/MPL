@@ -1,7 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <list>
 #include "main.h"
+#include "instruction.h"
 #include "mpl.h"
 #include "error.h"
 
@@ -14,16 +16,16 @@ int main(int argc, char **argv) {
   in.open(STDLIB_FILE);
   if (!in.good())
     fatal_error(string("unable to open ") + STDLIB_FILE);
-  mpl.read(in);
+  mpl.read(&in);
   in.close();
   if (argc <= 1)
-    mpl.read(cin);
+    mpl.read(&cin);
   else {
     for (int i = 1; i < argc; i++) {
       in.open(argv[i]);
       if (!in.good())
 	fatal_error(string("unable to open ") + argv[i]);
-      mpl.read(in);
+      mpl.read(&in);
       in.close();
     }
   }
