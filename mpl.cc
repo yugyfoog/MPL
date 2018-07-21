@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <cctype>
 #include "main.h"
 #include "instruction.h"
 #include "mpl.h"
@@ -58,6 +59,7 @@ void MPL::read_line() {
     if (instring)
       error("missing \"");
   } while (!graphflag);
+  lptr = line.begin();
 }
 
 void MPL::line_continuation() {
@@ -73,7 +75,6 @@ void MPL::line_continuation() {
     }
   }
 }
-      
 
 void MPL::comment() {
   int c;
@@ -82,7 +83,6 @@ void MPL::comment() {
     c = input->get();
   while (c != '\n' && c != EOF);
 }
-    
 
 void MPL::command() {
   if (match("include"))
@@ -109,6 +109,94 @@ void MPL::define_function() {
 }
 
 Code *MPL::expression() {
+  Code *code = logical_term();
+  for (;;) {
+    if (match("or"))
+      code = binary_operator(code, logical_term(), new Or());
+    else
+      break;
+  }
+  return code;
+}
+
+Code *MPL::logical_term() {
+  Code *code = logical_factor();
+  for (;;) {
+    if (match("and"))
+      code = binary_operator(code, logical_factor(), new And());
+    else
+      break;
+  }
+  return code;
+}
+
+Code *MPL::logical_factor() {
+  if (match("not"))
+    return unary_operator(logical_factor(), new Not());
+  return equality_expression();
+}
+
+Code *MPL::equality_expression() {
+  Code *code = arithmetic_expression();
+  if (match("=="))
+    code = binary_operator(code, arithmetic_expression(), new EQ());
+  else if (match("<>"))
+    code = binary_operator(code, arithmetic_expression(), new NE());
+  else if (match("<="))
+    code = binary_operator(code, arithmetic_expression(), new LE());
+  else if (match("<"))
+    code = binary_operator(code, arithmetic_expression(), new LT());
+  else if (match(">="))
+    code = binary_operator(code, arithmetic_expression(), new GE());
+  else if (match(">"))
+    code = binary_operator(code, arithmetic_expression(), new GT());
+  return code;
+}
+
+Code *MPL::arithmetic_expression() {
+  Code *code = term();
+  for (;;) {
+    if (match("+"))
+      code = binary_operator(code, term(), new Add());
+    else if (match("-"))
+      code = binary_operator(code, term(), new Subtract());
+    else
+      break;
+  }
+  return code;
+}
+
+Code *MPL::term() {
+  Code *code = factor();
+  for (;;) {
+    if (match("*"))
+      code = binary_operator(code, factor(), new Multiply());
+    else if (match("/"))
+      code = binary_operator(code, factor(), new Divide());
+    else if (match("mod"))
+      code = binary_operator(code, factor(), new Modulus());
+    else
+      break;
+  }
+  return code;
+}
+
+Code *MPL::factor() {
+ Code *code;
+
+  code = negate_expression();
+  if (match("^"))
+    code = binary_operator(code, factor(), new Power());
+  return code;
+}
+
+Code *MPL::negate_expression() {
+  if (match("-"))
+    return unary_operator(negate_expression(), new Negate());
+  return primary();
+}
+
+Code *MPL::primary() {
   XXX();
   return 0;
 }
@@ -125,10 +213,37 @@ Code *MPL::binary_operator(Code *e1, Code *e2, Instruction *instr) {
 }
 
 bool MPL::match(string const &s) {
-  XXX();
+  white_space();
+  if (isalpha(s[0]))
+    return match_identifier(s);
+  string::iterator s1;
+  string::const_iterator s2;
+  for (s1 = lptr, s2 = s.begin(); *s1 == *s2; s1++, s2++)
+    ;
+  if (s2 == s.end()) {
+    lptr = s1;
+    return true;
+  } 
   return false;
 }
 
+void MPL::white_space() {
+  while (isspace(*lptr))
+    lptr++;
+}
+
+bool MPL::match_identifier(string const &s) {
+  string::iterator s1;
+  string::const_iterator s2;
+  for (s1 = lptr, s2 = s.begin(); *s1 == *s2; s1++, s2++)
+    ;
+  if (s2 == s.end() && !isalnum(*s1)) {
+    lptr = s1;
+    return true;
+  }
+  return false;
+}
+      
 void MPL::execute(Code *c) {
   XXX();
 }
