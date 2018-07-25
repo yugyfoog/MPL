@@ -3,6 +3,7 @@
 #include <string>
 #include <list>
 #include "main.h"
+#include "symbol.h"
 #include "instruction.h"
 #include "mpl.h"
 #include "error.h"

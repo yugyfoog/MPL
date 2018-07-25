@@ -1,6 +1,9 @@
 #ifndef _INSTRUCTION_H_ // -*- C++ -*-
 #define _INSTRUCTION_H_
 
+#include <list>
+#include <string>
+
 class Instruction {
 };
 
@@ -8,6 +11,32 @@ class Print : public Instruction {
 };
 
 class Assign : public Instruction {
+};
+
+class MakeComplex : public Instruction {
+};
+
+class MatVec : public Instruction {
+};
+
+class RealConstant : public Instruction {
+public:
+  RealConstant(std::string const &);
+};
+
+class StringConstant : public Instruction {
+public:
+  StringConstant(std::string const &);
+};
+
+class Variable : public Instruction {
+public:
+  Variable(Symbol *);
+};
+
+class Call : public Instruction {
+public:
+  Call(Function *);
 };
 
 class Or : public Instruction {
@@ -56,6 +85,18 @@ class Power : public Instruction {
 };
 
 class Negate : public Instruction {
+};
+
+class Index : public Instruction {
+};
+
+class ColumnIndex : public Instruction {
+};
+
+class RowIndex : public Instruction {
+};
+
+class MatrixIndex : public Instruction {
 };
 
 typedef std::list<Instruction *> Code;
