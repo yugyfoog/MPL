@@ -20,6 +20,7 @@ class MatVec : public Instruction {
 };
 
 class RealConstant : public Instruction {
+  double x;
 public:
   RealConstant(std::string const &);
 };

@@ -88,15 +88,21 @@ void MPL::comment() {
 void MPL::command() {
   if (match("include"))
     do_include();
-  else if (match("function"))
+  else if (match("func"))
     define_function();
+  else if (match("proc"))
+    define_procedure();
   else {
+    Code *e = parse(); // parse() should handle both 'print' and 'let' statements
+    execute(e);
+    /*
     Code *e = expression();
     if (match("="))
       e = binary_operator(e, expression(), new Assign());
     else
       e = unary_operator(e, new Print());
     execute(e);
+    */
     delete e;
   }
 }
@@ -107,6 +113,48 @@ void MPL::do_include() {
 
 void MPL::define_function() {
   XXX();
+}
+
+void MPL::define_procedure() {
+  XXX();
+}
+
+Code *MPL::parse() {
+  int state = 0;
+  string token;
+  Code *code = 0;
+  
+  for (;;) {
+    switch (state) {
+    case 0:
+      if (match_number(token)) {
+	// state 1
+	code = new Code(1, new RealConstant(token));
+	state = 10;
+      }
+      else if (match_string(token))
+	state = 2;
+      else if (match("not"))
+	state = 4;
+      else if (match_identifier(token))
+	state = 3;
+      else if (match("-"))
+	state = 5;
+      else if (match("("))
+	state = 6;
+      else if (match("["))
+	state = 7;
+      else if (match("{"))
+	state = 8;
+      else
+	error("syntax error");
+      break;
+    default:
+      cout << "state " << state << " undefined" << endl;
+      XXX();
+    }
+  }
+  return code;
 }
 
 Code *MPL::expression() {
@@ -234,7 +282,7 @@ Code *MPL::primary() {
   else if (match_number(token))
     code = new Code(1, new RealConstant(token));
   else if (match_string(token))
-    code = new Code(1,new StringConstant(token));
+    code = new Code(1, new StringConstant(token));
   else if (match_identifier(token)) {
     Symbol *sym;
     if (symbol_table.find(token) == symbol_table.end())
@@ -359,8 +407,37 @@ bool MPL::match(string const &s) {
 }
 
 bool MPL::match_number(string &s) {
-  XXX();
-  return false;
+  white_space();
+  s.clear();
+  if (!isdigit(*lptr))
+    return false;
+  string::iterator s1 = lptr;
+  while (isdigit(*s1))
+    s += *s1++;
+  if (*s1 == '.') {
+    s += *s1++;
+    if (!isdigit(*s1)) {
+      s.clear();
+      return false;
+    }
+    while (isdigit(*s1))
+      s += *s1++;
+  }
+  if (toupper(*s1) == 'E') {
+    s += *s1++;
+    if (*s1 == '+')
+      s += *s1++;
+    else if (*s1 == '-')
+      s += *s1++;
+    if (!isdigit(*s1)) {
+      s.clear();
+      return false;
+    }
+    while (isdigit(*s1))
+      s += *s1++;
+  }
+  lptr = s1;
+  return true;
 }
 
 bool MPL::match_string(string &s) {

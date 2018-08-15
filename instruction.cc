@@ -4,8 +4,8 @@
 
 using namespace std;
 
-RealConstant::RealConstant(string const &) {
-  XXX();
+RealConstant::RealConstant(string const &s) {
+  x = stod(s);
 }
 
 StringConstant::StringConstant(string const &) {

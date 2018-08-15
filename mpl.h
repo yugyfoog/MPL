@@ -31,6 +31,9 @@ private:
   void execute(Code *);
   void do_include();
   void define_function();
+  void define_procedure();
+  Code *parse();
+  
   Code *expression();
   Code *logical_term();
   Code *logical_factor();
