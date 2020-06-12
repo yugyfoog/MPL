@@ -1,11 +1,20 @@
 CXXFLAGS = -Wall -g
 
-OBJS = main.o mpl.o error.o instruction.o
+OBJS = mpl.o value.o code.o math.o function.o
+
+all: mpl mpl.pdf
 
 mpl: $(OBJS)
 	g++ -g -o mpl $(OBJS)
 
-$(OBJS): main.h mpl.h symbol.h instruction.h error.h
+$(OBJS): mpl.hh value.hh code.hh math.hh function.hh
+
+
+mpl.pdf: mpl.tex
+	pdflatex -interaction batchmode mpl.tex
 
 clean:
-	rm -f *~ *.o *.stackdump
+	rm -f *.o *~
+
+test: mpl
+	mpl test.mpl

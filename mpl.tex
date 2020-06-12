@@ -1,0 +1,186 @@
+\documentclass{article}
+\begin{document}
+\title{The MPL Programming Language}
+\author{Mark Kamradt}
+\maketitle
+\section{Introduction}
+\emph{MPL}\footnote{MPL is an ambigius initialism.
+  For most people it could stand for Mathematical Programming Language.
+  If you're someone who know's me it stands for Mark's Programming Language.
+  To me it's just My Programming Language.}
+is a simple impartative mathematical scripting language.
+The intent of this language is for writting small mathematical programs.
+Programs that are to small to need the facilities of a real programming
+language, yet to large for a handheld calculator.
+
+If you type a mathematical expression, \emph{MPL} will respond with
+the result.  For example,
+\begin{verbatim}
+(1 + sqrt(5))/2
+\end{verbatim}
+gives
+\begin{verbatim}
+1.61803
+\end{verbatim}
+
+You can also save the results of an expression into a variable.
+\begin{verbatim}
+phi = 0.5 - 0.5*5^0.5
+\end{verbatim}
+And then use that variable in expressions
+\begin{verbatim}
+-1/phi
+\end{verbatim}
+
+You can also define functions. For example to compute the $n$th Fibonacci
+number define the function
+\begin{verbatim}
+function fibonacci(n)
+    q = (1 + sqrt(5))/2
+    p = (1 - sqrt(5))/2
+    return (q^n - p^n)/sqrt(5)
+end
+\end{verbatim}
+and then use that function in an expression
+\begin{verbatim}
+fibonacci(101)/fibonacci(100)
+\end{verbatim}
+\section{Lexical}
+\emph{MPL} is a line oriented language.
+Each statement is on its own line.
+Ending a line with a backslash, \verb|\|, will concatenate the next line
+to the end of the current line.
+Comments start with a tilde, \verb|~|, and continue to the end of the line.
+
+Each line is divided into \emph{word symbols}, \emph{numbers},
+\emph{strings}, and \emph{character symbols}.
+Word symbols start with an alphabetic character and are followed by
+zero or more alphanumeric characters.
+The underscore, \verb|_|, and the dollar sign, \verb|$|, count as
+alphabetic characters.
+
+There are no reserved words in \emph{MPL} but words with special meaning
+to the language should be avoided for naming variables and functions.
+Also words that begin with an underscore should be avoided.
+
+Numbers can be written as unsigned integers, decimal numbers or
+in scientific notation.
+
+Strings literals start and end with a double quote, \verb|"|,
+and must be on a single line. The C language escape characters
+can be used except octal and hex codes.
+
+\section{Types}
+There are eight data types in MPL. \emph{Real}, \emph{complex},
+\emph{real vector}, \emph{complex vector}, \emph{real matrix}, \emph{complex matrix}, \emph{string}, and \emph{list}. There are no facilities for creating
+addition data types.
+
+\subsection{Real}
+The \emph{real} data type is a double-precision floating point value.\footnote{Hopefully IEEE 754.}
+
+The math operators for \emph{real} are \verb|+| (addition),
+\verb|-| (subtraction and negation), \verb|*| (multiplication),
+\verb|/| (division), \verb|div| (floored division), \verb|mod| (modulus),
+and \verb|^| (exponenazation).
+Floored division is $q = \lfloor a/b \rfloor$.
+The modulus operation is then $r = b\lfloor a/b \rfloor - a$.
+Note that these are different than most other languages.
+
+\emph{Real} numbers can be compared using the relational operators
+equal \verb|==|, not equal \verb|!=|, less than \verb|<|, less than or equal \verb|<=|, greater than \verb|>|, and greater then or equal \verb|>=|.  The results of the relational operators is either 1.0 for true and 0.0 for false.
+
+Since \emph{MPL} has no Boolean type the Boolean operators use type \emph{real}.
+Any non-zero value is treated as true and zero is reated as false.
+The results are alway either 1.0 for true and 0.0 for false.
+The Boolean operators are \verb|and|, \verb|or|, and \verb|not|.
+The constants \verb|TRUE| and \verb|FALSE| are defined to 1 and 0.
+
+\subsection{Complex}
+
+The \emph{complex} type is represented by a pair of double precision floating point numbers. They can by typed by surrounding the comma sepreated real and imaginary parts with parenthesis. The number $3 + 4i$ is writen
+\begin{verbatim}
+(3,4)
+\end{verbatim}
+The values for the parts of a complex number can be any \emph{real} valued
+expression.
+You can used the notation for constructing complex number out of
+real number parts.
+\begin{verbatim}
+(cos(x)^2, sqrt(y))
+\end{verbatim}
+The constant \verb|I| is defined as the imanginary unit, $i$. You can use this for a more traditional
+representation of a complex number.
+\begin{verbatim}
+3 + 4*I
+\end{verbatim}
+
+To specify a complex number in polar notation there are a few different
+ways.
+\begin{verbatim}
+polar(2, PI/6)
+2*cis(PI/6)
+2*exp(I*PI/6)
+\end{verbatim}
+all represent the same number.
+
+To get the real or imaginary parts of a complex number use
+the \verb|real| or \verb|imag| functions.
+To get the magnitude or argument of a complex number use the
+\verb|abs| or the \verb|arg| functions.
+The \verb|norm| function returns the magnitude squared of a
+complex number. To find the complex conjugate of a number
+use the \verb|conj| function.
+
+\subsection{Vector}
+
+The vector type is a Euclidean $n$-space vector.
+Vectors are not ment to be used as general purpose arrays.
+
+The math operators for vector are \verb|+| (addition),
+\verb|-| (subtraction and negation), \verb|*| (scalar multiplication,
+dot product), \verb|/| (scalar division). 
+
+
+\section{Expressions}
+\section{Commands}
+\subsection{Print Command}
+The \emph{print} command is just an expression on a line by itself.
+\begin{center}
+  \verb|<|\emph{expression}\verb|>|
+\end{center}
+The expression is evaluated and its value printed.
+For formated ouput see the standard library.
+\subsection{Assignment Command}
+The \emph{assignemnt} command evaluates an expresion and
+assigns its value to a variable.
+\begin{center}
+  \verb|<|\emph{lvalue}\verb|> = <|\emph{expression}\verb|>|
+\end{center}
+The \emph{lvalue} can be either a simple variable or an indexed variable.
+If the \emph{lvalue} is a simple variable the previous value and
+type of the variable are discarded for the new value.
+If the \emph{lvalue} is an indexed variable the type (including sizes)
+of the expression must match the lvalue.
+\subsection{Include Command}
+The \emph{include} command is use to the include a file as if
+that file replaces the include command.
+\begin{center}
+  \verb|include <|\emph{expression}\verb|>|
+\end{center}
+\section{Statements}
+\section{Functions}
+\section{Standard Library}
+\section{Things You're Not Suppose to Know.}
+This section is for documenting ``undocumneted'' features of \emph{MPL}.
+These are features of the language that may change in the future.
+\subsection{Real Numbers}
+\emph{Real} numbers can be written in hexadecimal form.
+A \verb|#| (pound symbol) followed by hexidecimal digits give the bits
+of the floating point number. For example, \verb|#3ff0000000000000|
+represents the number 1.
+
+The way the current interpreter reads \emph{real} literals,
+a \verb|.| (decimal point) by itself represents the number
+zero.
+
+\end{document}

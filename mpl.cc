@@ -1,487 +1,770 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <map>
+#include <stack>
+#include <vector>
+#include <string>
+#include <complex>
+#include <valarray>
+#include <memory>
 #include <cctype>
-#include "main.h"
-#include "symbol.h"
-#include "instruction.h"
-#include "mpl.h"
+#include "value.hh"
+#include "code.hh"
+#include "function.hh"
+#include "mpl.hh"
 
-using namespace std;
+std::stack<std::istream *> file_stack;
 
-void MPL::read(istream *in) {
-  istream *save_input = input;
-  input = in;
-  for (;;) {
-    read_line();
-    if (line.empty())
-      break;
-    command();
-  } 
-  input = save_input;
+Token_List *tokens = 0;
+
+bool in_function = false;
+int locals = 0;
+int stack_pointer = 0;
+int frame_pointer = 0;
+std::vector<Value_ptr> memory;
+
+Symbol_Table local_symbol_table;
+Symbol_Table global_symbol_table;
+Function_Table function_table;
+
+void mpl_error(std::string const &s) {
+  std::cout << "error: " << s << std::endl;
+  exit(1);
 }
 
-void MPL::read_line() {
-  int c;
-  bool instring = false;
-  bool graphflag = false;
-  
-  do {
-    line.clear();
-    line_index = 0;
-    for (;;) {
-      c = input->get();
-      if (c == EOF)
-	return;
-      if (c == '\n')
-	break;
-      if (c == '"')
-	instring = !instring;
-      else if (c == '~' && !instring) {
-	comment();
-	break;
-      }
-      else if (c == '\\') {
-	if (instring) {
-	  line += c;
-	  c = input->get();
-	  if (c == '\n' || c == EOF)
-	    error("line continuations not allowed in strings");
-	}
-	else {
-	  line_continuation();
-	  c = ' ';
-	}
-      }
-      if (isgraph(c))
-	graphflag = true;
-      line += c;
-    }
-    if (instring)
-      error("missing \"");
-  } while (!graphflag);
-  lptr = line.begin();
+Value_ptr read_memory(unsigned index) {
+  if (memory.size() <= index)
+    return 0;
+  Value_ptr x = memory[index];
+  /*
+  if (x)
+    std::cout << x.get()->print() << " = memory[" << index << "]" << std::endl;
+  else
+    std::cout << "(null) = memory[" << index << "]" << std::endl;
+  */
+  return x;
 }
 
-void MPL::line_continuation() {
-  int c;
-  
-  for (;;) {
-    c = input->get();
-    if (c == '\n')
-      return;
-    if (isgraph(c)) {
-      input->putback(c);
-      return;
-    }
+void write_memory(unsigned index, Value_ptr x) {
+  if (memory.size() <= (unsigned)stack_pointer)
+    memory.resize(stack_pointer);
+  if (index < (unsigned)frame_pointer && typeid(*x) == typeid(Memory_Reference)) {
+    std::cout << "writing reference to global variable" << std::endl;
+    exit(1);
   }
+  if (memory[index] != x)
+    memory[index] = x;
+  /*
+  if (x == 0)
+    std::cout << "memory[" << index << "] = (null)" << std::endl;
+  else
+    std::cout << "memory[" << index << "] = " << x.get()->print() << std::endl;
+  */
 }
 
-void MPL::comment() {
-  int c;
+// scan_line() removes comments and returns true if
+// there was a continuation.
 
-  do
-    c = input->get();
-  while (c != '\n' && c != EOF);
-}
+//    This is tricky because both the comment character, '~', and
+//    continuation character, '\', can be in strings.
+//    (implemented as a state machine)
 
-void MPL::command() {
-  if (match("include"))
-    do_include();
-  else if (match("func"))
-    define_function();
-  else if (match("proc"))
-    define_procedure();
-  else {
-    Code *e = parse(); // parse() should handle both 'print' and 'let' statements
-    execute(e);
-    /*
-    Code *e = expression();
-    if (match("="))
-      e = binary_operator(e, expression(), new Assign());
-    else
-      e = unary_operator(e, new Print());
-    execute(e);
-    */
-    delete e;
-  }
-}
-
-void MPL::do_include() {
-  XXX();
-}
-
-void MPL::define_function() {
-  XXX();
-}
-
-void MPL::define_procedure() {
-  XXX();
-}
-
-Code *MPL::parse() {
+bool scan_line(std::string &line) {
   int state = 0;
-  string token;
-  Code *code = 0;
+  auto comment = line.end();
+  auto continuation = line.end();
   
-  for (;;) {
+  for (auto p = line.begin(); p != line.end(); p++) {
     switch (state) {
     case 0:
-      if (match_number(token)) {
-	// state 1
-	code = new Code(1, new RealConstant(token));
-	state = 10;
+    state0:
+      // not in string, not in possible continuation
+      switch (*p) {
+      case '~':
+	if (comment == line.end())
+	  comment = p;
+	break;
+      case '\\':
+	continuation = p;
+	state = 1;
+	break;
+      case '"':
+	if (comment == line.end()) 
+	  state = 2;
+	break;
+      default:
+	;
       }
-      else if (match_string(token))
-	state = 2;
-      else if (match("not"))
-	state = 4;
-      else if (match_identifier(token))
-	state = 3;
-      else if (match("-"))
-	state = 5;
-      else if (match("("))
-	state = 6;
-      else if (match("["))
-	state = 7;
-      else if (match("{"))
-	state = 8;
-      else
-	error("syntax error");
       break;
-    default:
-      cout << "state " << state << " undefined" << endl;
-      XXX();
+    case 1:
+      // not in string, possible continuation
+      if (isgraph(*p)) {
+	// Not a continuation. Process current character
+	// as though we were in state 0
+	continuation = line.end();
+	state = 0;
+	goto state0;
+      }
+      break;
+    case 2:
+      // in string, not following a backslash
+      switch (*p) {
+      case '\\':
+	state = 3;
+	break;
+      case '"':
+	state = 0;
+	break;
+      default:
+	;
+      }
+      break;
+    case 3:
+      // in string, following a backslash
+      state = 2;
+      break;
     }
   }
-  return code;
-}
-
-Code *MPL::expression() {
-  Code *code = logical_term();
-  for (;;) {
-    if (match("or"))
-      code = binary_operator(code, logical_term(), new Or());
-    else
-      break;
+  
+  if (comment < continuation) {
+    // remove comment
+    line.erase(comment, line.end());
+    line += ' ';
   }
-  return code;
-}
-
-Code *MPL::logical_term() {
-  Code *code = logical_factor();
-  for (;;) {
-    if (match("and"))
-      code = binary_operator(code, logical_factor(), new And());
-    else
-      break;
+  else if (continuation < comment) {
+    // remove continuation
+    line.erase(continuation, line.end());
+    line += ' ';
   }
-  return code;
-}
-
-Code *MPL::logical_factor() {
-  if (match("not"))
-    return unary_operator(logical_factor(), new Not());
-  return equality_expression();
-}
-
-Code *MPL::equality_expression() {
-  Code *code = arithmetic_expression();
-  if (match("=="))
-    code = binary_operator(code, arithmetic_expression(), new EQ());
-  else if (match("<>"))
-    code = binary_operator(code, arithmetic_expression(), new NE());
-  else if (match("<="))
-    code = binary_operator(code, arithmetic_expression(), new LE());
-  else if (match("<"))
-    code = binary_operator(code, arithmetic_expression(), new LT());
-  else if (match(">="))
-    code = binary_operator(code, arithmetic_expression(), new GE());
-  else if (match(">"))
-    code = binary_operator(code, arithmetic_expression(), new GT());
-  return code;
-}
-
-Code *MPL::arithmetic_expression() {
-  Code *code = term();
-  for (;;) {
-    if (match("+"))
-      code = binary_operator(code, term(), new Add());
-    else if (match("-"))
-      code = binary_operator(code, term(), new Subtract());
-    else
-      break;
+  switch (state) {
+  case 0:
+    return false;
+  case 1:
+    return true;
+  default:
+    std::cout << "missing quote (\")" << std::endl;
+    exit(1);
   }
-  return code;
 }
 
-Code *MPL::term() {
-  Code *code = factor();
-  for (;;) {
-    if (match("*"))
-      code = binary_operator(code, factor(), new Multiply());
-    else if (match("/"))
-      code = binary_operator(code, factor(), new Divide());
-    else if (match("mod"))
-      code = binary_operator(code, factor(), new Modulus());
-    else
-      break;
+std::string read_line() {
+  std::string line;
+  std::string next;
+  bool continuation = false;
+
+  do {
+
+    // make sure we have a file to read from
+    
+    for (;;) {
+      if (file_stack.empty())
+	return line;
+      if (file_stack.top()->good())
+	break;
+      if (file_stack.top() != &std::cin) // don't delete cin!
+	delete file_stack.top();
+      file_stack.pop();
+    }
+
+    // now read
+
+    std::getline(*file_stack.top(), next);
+    continuation = scan_line(next);
+    line += next;
+  } while (continuation);
+  return line;
+}
+
+bool is_id_startchar(int c) {
+  return isalpha(c) || c == '_' || c == '$';
+}
+
+bool is_id_char(int c) {
+  return isalnum(c) || c == '_' || c == '$';
+}
+
+bool is_identifier() {
+  if (is_id_startchar((*tokens->front())[0]))
+    return true;
+  return false;
+}
+
+bool is_number() {
+  int c = (*tokens->front())[0];
+  return isdigit(c) || c == '#' || c== '.';
+}
+
+bool is_string() {
+  return (*tokens->front())[0] == '"';
+}
+
+Token_List *tokenize(std::string const &line) {
+  auto tkns = new Token_List();
+  std::string s;
+  for (auto p = line.begin(); p != line.end();) {
+    if (!isgraph(*p))
+      p++;
+    else if (is_id_startchar(*p)) {
+      s += *p++;
+      while (is_id_char(*p))
+	s += *p++;
+      tkns->push_back(new std::string(s));
+      s.clear();
+    }
+    else if (isdigit(*p) || *p == '.') {
+      while (isdigit(*p))
+	s += *p++;
+      if (*p == '.') {
+	s += *p++;
+	while (isdigit(*p))
+	  s += *p++;
+      }
+      if (toupper(*p) == 'E') {
+	s += *p++;
+	if (*p == '+' || *p == '-')
+	  s += *p++;
+	while (isdigit(*p))
+	  s += *p++;
+      }
+      tkns->push_back(new std::string(s));
+      s.clear();
+    }
+    else if (*p == '#') {
+      s += *p++;
+      while (isxdigit(*p))
+	s += *p++;
+      tkns->push_back(new std::string(s));
+      s.clear();
+    }
+    else if (*p == '\"') {
+      s += *p++;
+      while (p != line.end() && *p != '"') {
+	if (*p == '\\') {
+	  s += *p++;
+	  if (p != line.end())
+	    s += *p++;
+	}
+	else
+	  s += *p++;
+      }
+      if (*p == '"')
+	s += *p++;
+      else
+	s += '"';
+      tkns->push_back(new std::string(s));
+      s.clear();
+    }
+    else {
+      char c = *p++;
+      s += c;
+      if (p != line.end()) {
+	if (c == '=' && *p == '=')
+	  s += *p++;
+	else if (c == '!' && *p == '=')
+	  s += *p++;
+	else if (c == '<' && *p == '=')
+	  s += *p++;
+	else if (c == '>' && *p == '=')
+	  s += *p++;
+      }
+      tkns->push_back(new std::string(s));
+      s.clear();
+    }
   }
-  return code;
+  return tkns;
 }
 
-Code *MPL::factor() {
- Code *code;
-
-  code = negate_expression();
-  if (match("^"))
-    code = binary_operator(code, factor(), new Power());
-  return code;
+void next_line() {
+  std::string line = read_line();
+  tokens = tokenize(line);
 }
 
-Code *MPL::negate_expression() {
-  if (match("-"))
-    return unary_operator(negate_expression(), new Negate());
-  return primary();
+bool at_end_line() {
+  return tokens->empty();
 }
 
+void line_end() {
+  if (!at_end_line()) {
+    std::cout << "syntax error at " << *tokens->front() << std::endl;
+    exit(1);
+  }
+}
 
-/*
+void next_token() {
+  delete tokens->front();
+  tokens->pop_front();
+}
 
- ( expression )
- ( expression , expression )
- [ ylist ]
- { list }
- number
- "string"
- identiier
- identifier ( arguments )
- identifier [ expression ]
- identifier [ <expression> , <expession> ]
-*/
+bool check(std::string const &s) {
+  if (tokens->empty()) // tokens will be empty if we are at the end of the line
+    return false;
+  return *tokens->front() == s;
+}
 
-Code *MPL::primary() {
-  Code *code;
-  string token;
+bool match(std::string const &s) {
+  if (check(s)) {
+    next_token();
+    return true;
+  }
+  return false;
+}
+
+void need(std::string const &s) {
+  if (check(s))
+    next_token();
+  else {
+    if (tokens->front())
+      std::cout << "syntax error: " << s << " expected near" << *tokens->front() << std::endl;
+    else
+      std::cout << "syntax error: " << s << " expected" << std::endl;
+    exit(1);
+  }
+}
+
+std::string identifier() {
+  std::string s = *tokens->front();
+  next_token();
+  return s;
+}
+
+Code *expression();
+
+// xlist() -- list, vector, or row of a matrix (not empty)
+
+Code *xlist() {
+  Code *x = expression();
+  if (match(","))
+    return new ListPart(x, xlist());
+  return new ListPart(x, 0);
+}
+
+// rows of a matrix
+
+Code *yylist() {
+  Code *x = xlist();
+  if (at_end_line()) {
+    do
+      next_line();
+    while (at_end_line());
+    return new ListPart(x, yylist());
+  }
+  if (match("|"))
+    return new ListPart(x, yylist());
+  return new ListPart(x, 0);
+}
+
+// ylist() -- either a vector or a matrix
+
+Code *ylist() {
+  Code *x = xlist();
+  if (at_end_line()) {
+    do
+      next_line();
+    while (at_end_line());
+    return new ListPart(x, yylist());
+  }
+  if (match("|"))
+    return new ListPart(x, yylist());
+  return x;
+}
+
+Code *parameters() {
+  Code *param = expression();
+  if (match(","))
+    return new Parameter(param, parameters());
+  return new Parameter(param, 0);
+}
+
+Code *range() {
+  Code *x;
+  Code *y = 0;
+  Code *z = 0;
+
+  x = expression();
+  if (match(":")) {
+    y = expression();
+    if (match(":"))
+      z = expression();
+    return new Range(x, y, z);
+  }
+  return x;
+}
+
+Code *primary_expression() {
+  Code *x;
   
   if (match("(")) {
-    code = expression();
+    x = expression();
     if (match(","))
-      code = binary_operator(code, expression(), new MakeComplex());
+      x = new ComplexX(x, expression());
     need(")");
   }
   else if (match("[")) {
-    code = ylist();
+    x = ylist();
     need("]");
-    code = unary_operator(code, new MatVec());
+    return new Call("matvec", new Parameter(x, 0));
   }
   else if (match("{")) {
-    code = zlist();
+    if (check("}"))
+      x = new ListX(0); // empty list
+    else
+      x = new ListX(xlist());
     need("}");
   }
-  else if (match_number(token))
-    code = new Code(1, new RealConstant(token));
-  else if (match_string(token))
-    code = new Code(1, new StringConstant(token));
-  else if (match_identifier(token)) {
-    Symbol *sym;
-    if (symbol_table.find(token) == symbol_table.end())
-      sym = 0;
-    else
-      sym = symbol_table[token];
+  else if (is_number()) {
+    x = new RealX(*tokens->front());
+    next_token();
+  }
+  else if (is_string()) {
+    x = new StringX(*tokens->front());
+    next_token();
+  }
+  else if (is_identifier()) {
+    std::string id = identifier();
     if (match("(")) {
-      Function *func;
-      if (sym == 0) {
-	func = new Function();
-	symbol_table[token] = func;
-      }
+      if (match(")"))
+	x = 0;
       else {
-	if (typeid(*sym) != typeid(Function))
-	  error(token + " is not a function");
-	func = (Function *)sym;
+	x = parameters();
+	need(")");
       }
-      code = function_arguments(func->args);
-      need(")");
-      if (func->args == -1)
-	func->args = argument_count;
-      code = unary_operator(code, new Call(func));
+      x = new Call(id, x);
     }
     else {
-      if (sym == 0) {
-	if (infunction)
-	  sym = new Local();
-	else
-	  sym = new Global();
-	symbol_table[token] = sym;
-      }
-      code = new Code(1, new Variable(sym));
+      x = new Variable(id);
+      // only allow indexing after 
       for (;;) {
 	if (match("[")) {
-	  if (match(",")) {
-	    code = binary_operator(code, expression(), new ColumnIndex());
-	    need("]");
-	  }
+	  if (match(","))
+	    x = new ColumnIndex(x, range());
 	  else {
-	    Code *code2 = expression();
+	    Code *y = range();
 	    if (match(",")) {
-	      if (match("]"))
-		code = binary_operator(code, code2, new RowIndex());
-	      else {
-		code = ternary_operator(code, code2, expression(),
-					new MatrixIndex());
-		need("]");
-	      }
+	      if (check("]"))
+		x = new RowIndex(x, y);
+	      else
+		x = new MatrixIndex(x, y, range());
 	    }
-	    else {
-	      code = binary_operator(code, code2, new Index());
-	      need("]");
-	    }
+	    else
+	      x = new Index(x, y);
 	  }
+	  need("]");
 	}
 	else
 	  break;
       }
     }
   }
+  return x;
+}
+
+Code *exponential_expression() {
+  Code *x = primary_expression();
+  if (match("^"))
+    return new Exponent(x, exponential_expression());
+  return x;
+}
+
+Code *factor() {
+  if (match("-"))
+    return new Negate(factor());
+  return exponential_expression();
+}
+
+Code *term() {
+  Code *x = factor();
+  for (;;) {
+    if (match("*"))
+      x = new Multiply(x, factor());
+    else if (match("/"))
+      x = new Divide(x, factor());
+    else if (match("div"))
+      x = new Floored_Divide(x, factor());
+    else if (match("mod"))
+      x = new Modulo(x, factor());
+    else
+      break;
+  }
+  return x;
+}
+
+Code *arithmetic_expression() {
+  Code *x = term();
+  for (;;) {
+    if (match("+"))
+      x = new Add(x, term());
+    else if (match("-"))
+      x = new Subtract(x, term());
+    else
+      break;
+  }
+  return x;
+}
+
+Code *relational_expression() {
+  Code *x = arithmetic_expression();
+  for (;;) {
+    if (match("=="))
+      x = new EQ(x, arithmetic_expression());
+    else if (match("!="))
+      x = new NE(x, arithmetic_expression());
+    else if (match("<"))
+      x = new LT(x, arithmetic_expression());
+    else if (match("<="))
+      x = new LE(x, arithmetic_expression());
+    else if (match(">"))
+      x = new GT(x, arithmetic_expression());
+    else if (match(">="))
+      x = new GE(x, arithmetic_expression());
+    else
+      break;
+  }
+  return x;
+}
+
+Code *logical_factor() {
+  if (match("not"))
+    return new Not(logical_factor());
+  return relational_expression();
+}
+
+Code *logical_term() {
+  Code *x = logical_factor();
+  for (;;) {
+    if (match("and"))
+      x = new And(x, logical_factor());
+    else
+      break;
+  }
+  return x;
+}
+
+Code *expression() {
+  Code *x = logical_term();
+  for (;;) {
+    if (match("or"))
+      x = new Or(x, logical_term());
+    else
+      break;
+  }
+  return x;
+}
+
+Code *print_or_assign() {
+  Code *code = expression();
+  if (match("="))
+    return new Assign(code, expression());
+  return new Print(code);
+}
+
+Code *statements();
+
+Code *if_statement() {
+  Code *cond = expression();
+  need("then");
+  line_end();
+  Code *true_part = statements();
+  Code *false_part = 0;
+  if (match("else")) {
+    if (match("if"))
+      false_part = if_statement();
+    else {
+      line_end();
+      false_part = statements();
+      need("end");
+    }
+  }
   else
-    error("syntax error");
-  return code;
+    need("end");
+  line_end();
+  return new If(cond, true_part, false_part);
 }
 
-Code *MPL::xlist() {
-  XXX();
+Code *while_statement() {
+  Code *cond = expression();
+  line_end();
+  Code *body = statements();
+  need("end");
+  line_end();
+  return new While(cond, body);
+}
+
+Code *repeat_statement() {
+  line_end();
+  Code *body = statements();
+  need("until");
+  Code *cond = expression();
+  line_end();
+  return new Repeat(cond, body);
+}
+
+Code *return_statement() {
+  if (tokens->empty())
+    return new Return(0);
+  return new Return(expression());
+}
+
+Code *statement() {
+  if (match("return"))
+    return return_statement();
+  if (match("if"))
+    return if_statement();
+  if (match("while"))
+    return while_statement();
+  if (match("repeat"))
+    return repeat_statement();
+  return print_or_assign();
+}
+
+Code *statements() {
+  next_line();
+  if (at_end_line())
+    return statements();
+  if (check("end") || check("else") || check("until"))
+    return 0;
+  Code *stmt = statement();
+  line_end();
+  return new Statement(stmt, statements());
+}
+
+void formal_parameter_list() {
+  if (is_identifier()) {
+    do {
+      std::string id = identifier();
+      auto p = local_symbol_table.find(id);
+      if (p == local_symbol_table.end()) {
+	local_symbol_table[id] = -(++locals);
+	// std::cout << "new parameter: " << id << ": " << local_symbol_table[id] << std::endl;
+      }
+      else {
+	std::cout << "parameter \"" << id << "\" repeated in parameter list" << std::endl;
+	exit(1);
+      }
+    } while (match(","));
+  }
+}
+
+Code *define_function() {
+  in_function = true;
+  std::string id = identifier();
+  locals = 0;
+  need("(");
+  formal_parameter_list();
+  int params = locals;
+  need(")");
+  line_end();
+  Code *body = statements();
+  // print_code(body);
+  need("end");
+  line_end();
+  delete function_table[id];
+  function_table[id] = new User_Function(params, locals-params, body);
+  local_symbol_table.clear();
+  in_function = false;
   return 0;
 }
 
-Code *MPL::ylist() {
-  XXX();
+Code *include() {
+  return new Include(expression());
+}
+
+Code *compile() {
+  if (!tokens->empty()) {
+    if (match("include")) 
+      return include();
+    if (match("function"))
+      return define_function();
+    return print_or_assign();
+  }
   return 0;
 }
 
-Code *MPL::yylist() {
-  XXX();
-  return 0;
-}
-
-Code *MPL::zlist() {
-  XXX();
-  return 0;
-}
-
-Code *MPL::function_arguments(int n) {
-  XXX();
-  return 0;
-}
-
-Code *MPL::unary_operator(Code *e, Instruction *instr) {
-  e->push_back(instr);
-  return e;
-}
-
-Code *MPL::binary_operator(Code *e1, Code *e2, Instruction *instr) {
-  e1->splice(e1->end(), *e2);
-  e1->push_back(instr);
-  return e1;
-}
-
-Code *MPL::ternary_operator(Code *e1, Code *e2, Code *e3, Instruction *instr) {
-  e1->splice(e1->end(), *e2);
-  e1->splice(e1->end(), *e3);
-  e1->push_back(instr);
-  return e1;
-}
-
-bool MPL::match(string const &s) {
-  white_space();
-  if (isalpha(s[0]))
-    return match_identifier(s);
-  string::iterator s1;
-  string::const_iterator s2;
-  for (s1 = lptr, s2 = s.begin(); *s1 == *s2; s1++, s2++)
-    ;
-  if (s2 == s.end()) {
-    lptr = s1;
-    return true;
-  } 
-  return false;
-}
-
-bool MPL::match_number(string &s) {
-  white_space();
-  s.clear();
-  if (!isdigit(*lptr))
-    return false;
-  string::iterator s1 = lptr;
-  while (isdigit(*s1))
-    s += *s1++;
-  if (*s1 == '.') {
-    s += *s1++;
-    if (!isdigit(*s1)) {
-      s.clear();
-      return false;
+void command_loop() {
+  while (!file_stack.empty()) {
+    next_line();
+    if (!tokens->empty()) {
+      Code *cmd = compile();
+      line_end();
+      if (cmd) {
+	// print_code(cmd);
+	cmd->execute();
+	delete cmd;
+      }
     }
-    while (isdigit(*s1))
-      s += *s1++;
+    for (auto p : *tokens)
+      delete p;
+    delete tokens;
   }
-  if (toupper(*s1) == 'E') {
-    s += *s1++;
-    if (*s1 == '+')
-      s += *s1++;
-    else if (*s1 == '-')
-      s += *s1++;
-    if (!isdigit(*s1)) {
-      s.clear();
-      return false;
+}
+
+void initialize_builtin_functions() {
+  function_table["matvec"] = new Builtin_Function(1, mpl_matvec);
+
+  function_table["exit"] = new Builtin_Function(1, mpl_exit);
+  function_table["list"] = new Builtin_Function(1, mpl_list);
+  function_table["vector"] = new Builtin_Function(1, mpl_vector);
+  function_table["size"] = new Builtin_Function(1, mpl_size);
+  function_table["concat"] = new Builtin_Function(2, mpl_concat);
+  function_table["read"] = new Builtin_Function(0, mpl_read);
+  function_table["eof"] = new Builtin_Function(0, mpl_eof);
+  function_table["type"] = new Builtin_Function(1, mpl_type);
+  function_table["ascii"] = new Builtin_Function(1, mpl_ascii);
+  function_table["real"] = new Builtin_Function(1, mpl_real);
+  function_table["imag"] = new Builtin_Function(1, mpl_imag);
+  function_table["abs"] = new Builtin_Function(1, mpl_abs);
+  function_table["arg"] = new Builtin_Function(1, mpl_arg);
+  function_table["norm"] = new Builtin_Function(1, mpl_norm);
+  function_table["conj"] = new Builtin_Function(1, mpl_conj);
+  function_table["polar"] = new Builtin_Function(2, mpl_polar);
+
+  function_table["sqrt"] = new Builtin_Function(1, mpl_sqrt);
+  function_table["exp"] = new Builtin_Function(1, mpl_exp);
+  function_table["expm1"] = new Builtin_Function(1, mpl_expm1);
+  
+  function_table["log"] = new Builtin_Function(1, mpl_log);
+  function_table["log1p"] = new Builtin_Function(1, mpl_log1p);
+  function_table["log10"] = new Builtin_Function(1, mpl_log10);
+  
+  function_table["sin"] = new Builtin_Function(1, mpl_sin);
+  function_table["cos"] = new Builtin_Function(1, mpl_cos);
+  function_table["tan"] = new Builtin_Function(1, mpl_tan);
+  function_table["asin"] = new Builtin_Function(1, mpl_asin);
+  function_table["acos"] = new Builtin_Function(1, mpl_acos);
+  function_table["atan"] = new Builtin_Function(1, mpl_atan);
+  function_table["atan2"] = new Builtin_Function(2, mpl_atan2);
+  function_table["sinh"] = new Builtin_Function(1, mpl_sinh);
+  function_table["cosh"] = new Builtin_Function(1, mpl_cosh);
+  function_table["tanh"] = new Builtin_Function(1, mpl_tanh);
+  function_table["asinh"] = new Builtin_Function(1, mpl_asinh);
+  function_table["acosh"] = new Builtin_Function(1, mpl_acosh);
+  function_table["atanh"] = new Builtin_Function(1, mpl_atanh);
+
+  function_table["gamma"] = new Builtin_Function(1, mpl_gamma);
+}
+
+int main(int argc, char **argv) {
+  initialize_builtin_functions();
+  file_stack.push(new std::ifstream("stdlib.mpl"));
+  command_loop();
+  if (argc == 1) {
+    file_stack.push(&std::cin);
+    command_loop();
+  }
+  else {
+    for (int i = 1; i < argc; i++) {
+      file_stack.push(new std::ifstream(argv[i]));
+      if (file_stack.top()->good())
+	command_loop();
+      else {
+	mpl_error(std::string("unable to open: ") + argv[i]);
+      }
     }
-    while (isdigit(*s1))
-      s += *s1++;
   }
-  lptr = s1;
-  return true;
+  return 0;
 }
-
-bool MPL::match_string(string &s) {
-  XXX();
-  return false;
-}
-
-bool MPL::match_identifier(string &s) {
-  XXX();
-  return false;
-}
-
-void MPL::need(string const &s) {
-  white_space();
-  string::iterator s1;
-  string::const_iterator s2;
-  for (s1 = lptr, s2 = s.begin(); s2 != s.end(); s1++, s2++)
-    if (*s1 != *s2)
-      error("missing " + s);
-  lptr = s1;
-}
-
-void MPL::white_space() {
-  while (isspace(*lptr))
-    lptr++;
-}
-
-bool MPL::match_identifier(string const &s) {
-  string::iterator s1;
-  string::const_iterator s2;
-  for (s1 = lptr, s2 = s.begin(); *s1 == *s2; s1++, s2++)
-    ;
-  if (s2 == s.end() && !isalnum(*s1)) {
-    lptr = s1;
-    return true;
-  }
-  return false;
-}
-      
-void MPL::execute(Code *c) {
-  XXX();
-}
-
-void MPL::error(string const &msg) {
-  cout << msg << endl;
+  
+void x_undefined(char const *file, int line, char const *func) {
+  std::cerr << func << "() undefined in " << file << " at line " << line << std::endl;
   exit(1);
 }
