@@ -80,38 +80,38 @@ function cot(x)
 end
 
 function acsc(x)
-    return _asin(1/x)
+    return asin(1/x)
 end
 
 function asec(x)
-    return _acos(1/x)
+    return acos(1/x)
 end
 
 function acot(x)
-    return _atan(1/x)
+    return atan(1/x)
 end
 
 function csch(x)
-    return 1/_sinh(x)
+    return 1/sinh(x)
 end
 
 function sech(x)
-    return 1/_cosh(x)
+    return 1/cosh(x)
 end
 
 function coth(x)
-    return 1/_tan(x)
+    return 1/tan(x)
 end
 
 function acsch(x)
-    return _asinh(1/x)
+    return asinh(1/x)
 end
 
 function asech(x)
-    return _acosh(1/x)
+    return acosh(1/x)
 end
 
 function acoth(x)
-    return _atanh(1/x)
+    return atanh(1/x)
 end
 

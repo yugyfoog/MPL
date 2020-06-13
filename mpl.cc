@@ -37,12 +37,6 @@ Value_ptr read_memory(unsigned index) {
   if (memory.size() <= index)
     return 0;
   Value_ptr x = memory[index];
-  /*
-  if (x)
-    std::cout << x.get()->print() << " = memory[" << index << "]" << std::endl;
-  else
-    std::cout << "(null) = memory[" << index << "]" << std::endl;
-  */
   return x;
 }
 
@@ -55,12 +49,6 @@ void write_memory(unsigned index, Value_ptr x) {
   }
   if (memory[index] != x)
     memory[index] = x;
-  /*
-  if (x == 0)
-    std::cout << "memory[" << index << "] = (null)" << std::endl;
-  else
-    std::cout << "memory[" << index << "] = " << x.get()->print() << std::endl;
-  */
 }
 
 // scan_line() removes comments and returns true if

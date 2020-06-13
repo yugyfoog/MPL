@@ -240,10 +240,3 @@ std::string Memory_Reference::print() const {
   //  return read_memory(index)->print();
 }
 
-void check_null(Value *x) {
-  if (x == 0) {
-    std::cout << "null value" << std::endl;
-    exit(1);
-  }
-}
-

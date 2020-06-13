@@ -21,7 +21,12 @@ Value_ptr User_Function::execute(int args) {
     exit(1);
   }
   stack_pointer += locals;
-  return value(body->execute());
+  if (body) {
+    Value_ptr rv = body->execute();
+    if (rv)
+      return value(rv);
+  }
+  return 0;
 }
 
 Value_ptr Builtin_Function::execute(int args) {
@@ -156,6 +161,8 @@ Value_ptr mpl_size() {
     return Value_ptr(new Real(1.0));
   if (typeid(*x) == typeid(Complex))
     return Value_ptr(new Real(1.0));
+  if (typeid(*x) == typeid(Vector))
+    return Value_ptr(new Real(((Vector *)x.get())->size()));
   
   // some more types go here
   
@@ -196,7 +203,6 @@ Value_ptr mpl_eof() {
 
 Value_ptr mpl_type() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real))
     return Value_ptr(new Real(1.0));
   if (typeid(*x) == typeid(Complex))
@@ -222,7 +228,6 @@ Value_ptr mpl_type() {
 
 Value_ptr mpl_ascii() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(String)) {
     String *xx = (String *)x;
     if (xx->index().size() == 0)
@@ -236,36 +241,33 @@ Value_ptr mpl_ascii() {
 
 Value_ptr mpl_real() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) != typeid(Complex)) {
     std::cout << "type error" << std::endl;
     exit(1);
   }
   Complex *u = (Complex *)x;
-  return Value_ptr(new Real((*u->data())[u->index()].real()));
+  return Value_ptr(new Real(u->value().real()));
 }
 
 Value_ptr mpl_imag() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) != typeid(Complex)) {
     std::cout << "type error" << std::endl;
     exit(1);
   }
   Complex *u = (Complex *)x;
-  return Value_ptr(new Real((*u->data())[u->index()].imag()));
+  return Value_ptr(new Real(u->value().imag()));
 }
 
 Value_ptr mpl_abs() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(abs(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Real(abs((*u->data())[u->index()])));
+    return Value_ptr(new Real(abs(u->value())));
   }
   std::cout << "type error" << std::endl;
   exit(1);
@@ -274,42 +276,37 @@ Value_ptr mpl_abs() {
 
 Value_ptr mpl_arg() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) != typeid(Complex)) {
     std::cout << "type error" << std::endl;
     exit(1);
   }
   Complex *u = (Complex *)x;
-  return Value_ptr(new Real(arg((*u->data())[u->index()])));
+  return Value_ptr(new Real(arg(u->value())));
 }
 
 Value_ptr mpl_norm() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) != typeid(Complex)) {
     std::cout << "type error" << std::endl;
     exit(1);
   }
   Complex *u = (Complex *)x;
-  return Value_ptr(new Real(norm((*u->data())[u->index()])));
+  return Value_ptr(new Real(norm(u->value())));
 }
 
 Value_ptr mpl_conj() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) != typeid(Complex)) {
     std::cout << "type error" << std::endl;
     exit(1);
   }
   Complex *u = (Complex *)x;
-  return Value_ptr(new Complex(conj((*u->data())[u->index()])));;
+  return Value_ptr(new Complex(conj(u->value())));
 }
 
 Value_ptr mpl_polar() {
   Value *x = value(read_memory(frame_pointer)).get();
   Value *y = value(read_memory(frame_pointer+1)).get();
-  check_null(x);
-  check_null(y);
   if (typeid(*x) != typeid(Real)  || typeid(*y) != typeid(Real)) {
     std::cout << "type error" << std::endl;
     exit(1);
@@ -321,14 +318,13 @@ Value_ptr mpl_polar() {
 
 Value_ptr mpl_sqrt() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(sqrt(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(sqrt((*u->data())[u->index()])));
+    return Value_ptr(new Complex(sqrt(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -337,14 +333,13 @@ Value_ptr mpl_sqrt() {
 
 Value_ptr mpl_exp() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(exp(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(exp((*u->data())[u->index()])));
+    return Value_ptr(new Complex(exp(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -353,7 +348,6 @@ Value_ptr mpl_exp() {
 
 Value_ptr mpl_expm1() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(expm1(u->value())));
@@ -365,14 +359,13 @@ Value_ptr mpl_expm1() {
 
 Value_ptr mpl_log() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(log(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(log((*u->data())[u->index()])));
+    return Value_ptr(new Complex(log(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -381,7 +374,6 @@ Value_ptr mpl_log() {
 
 Value_ptr mpl_log1p() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(log1p(u->value())));
@@ -393,14 +385,13 @@ Value_ptr mpl_log1p() {
 
 Value_ptr mpl_log10() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(log10(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(log10((*u->data())[u->index()])));
+    return Value_ptr(new Complex(log10(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -409,14 +400,13 @@ Value_ptr mpl_log10() {
 
 Value_ptr mpl_sin() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(sin(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(sin((*u->data())[u->index()])));
+    return Value_ptr(new Complex(sin(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -425,14 +415,13 @@ Value_ptr mpl_sin() {
 
 Value_ptr mpl_cos() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(cos(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(cos((*u->data())[u->index()])));
+    return Value_ptr(new Complex(cos(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -442,14 +431,13 @@ Value_ptr mpl_cos() {
 
 Value_ptr mpl_tan() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(tan(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(tan((*u->data())[u->index()])));
+    return Value_ptr(new Complex(tan(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -458,14 +446,13 @@ Value_ptr mpl_tan() {
 
 Value_ptr mpl_asin() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(asin(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(asin((*u->data())[u->index()])));
+    return Value_ptr(new Complex(asin(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -474,14 +461,13 @@ Value_ptr mpl_asin() {
 
 Value_ptr mpl_acos() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(acos(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(acos((*u->data())[u->index()])));
+    return Value_ptr(new Complex(acos(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -490,14 +476,13 @@ Value_ptr mpl_acos() {
 
 Value_ptr mpl_atan() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(atan(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(atan((*u->data())[u->index()])));
+    return Value_ptr(new Complex(atan(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -507,8 +492,6 @@ Value_ptr mpl_atan() {
 Value_ptr mpl_atan2() {
   Value *x = value(read_memory(frame_pointer)).get();
   Value *y = value(read_memory(frame_pointer+1)).get();
-  check_null(x);
-  check_null(y);
   if (typeid(*x) != typeid(Real)  || typeid(*y) != typeid(Real)) {
     std::cout << "type error" << std::endl;
     exit(1);
@@ -520,14 +503,13 @@ Value_ptr mpl_atan2() {
 
 Value_ptr mpl_sinh() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(sinh(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(sinh((*u->data())[u->index()])));
+    return Value_ptr(new Complex(sinh(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -536,14 +518,13 @@ Value_ptr mpl_sinh() {
 
 Value_ptr mpl_cosh() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(cosh(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(cosh((*u->data())[u->index()])));
+    return Value_ptr(new Complex(cosh(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -552,14 +533,13 @@ Value_ptr mpl_cosh() {
 
 Value_ptr mpl_tanh() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(tanh(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(tanh((*u->data())[u->index()])));
+    return Value_ptr(new Complex(tanh(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -568,14 +548,13 @@ Value_ptr mpl_tanh() {
 
 Value_ptr mpl_asinh() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(asinh(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(asinh((*u->data())[u->index()])));
+    return Value_ptr(new Complex(asinh(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -584,14 +563,13 @@ Value_ptr mpl_asinh() {
 
 Value_ptr mpl_acosh() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(acosh(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(acosh((*u->data())[u->index()])));
+    return Value_ptr(new Complex(acosh(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -600,14 +578,13 @@ Value_ptr mpl_acosh() {
 
 Value_ptr mpl_atanh() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(atanh(u->value())));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(atanh((*u->data())[u->index()])));
+    return Value_ptr(new Complex(atanh(u->value())));
   }
   std::cout << type_name(x) << std::endl;
   std::cout << "type error" << std::endl;
@@ -616,7 +593,6 @@ Value_ptr mpl_atanh() {
 
 Value_ptr mpl_gamma() {
   Value *x = value(read_memory(frame_pointer)).get();
-  check_null(x);
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(tgamma(u->value())));

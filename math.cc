@@ -111,12 +111,11 @@ Real *eq(Real *u, Real *v) {
 }
 
 Real *eq(Real *u, Complex *v) {
-  return new Real(u->value() == (*v->data())[v->index()].real()
-		  && (*v->data())[v->index()].imag() == 0.0);
+  return new Real(u->value() == v->value());
 }
 
 Real *eq(Complex *u, Complex *v) {
-  return new Real((*u->data())[u->index()] == (*v->data())[v->index()]);
+  return new Real(u->value() == v->value());
 }
 
 Real *eq(Vector *u, Vector *v) {
@@ -147,7 +146,6 @@ Real *eq(String *u, String *v) {
 }
 
 Value_ptr eq(Value *u, Value *v) {
-  check_null(u); check_null(v);
   if (typeid(*u) == typeid(List) || typeid(*v) == typeid(List))
     return dolist(u, v, eq);
   if (typeid(*u) == typeid(Real)) {
@@ -180,12 +178,11 @@ Real *ne(Real *u, Real *v) {
 }
 
 Real *ne(Real *u, Complex *v) {
-  return new Real(u->value() != (*v->data())[v->index()].real()
-    || (*v->data())[v->index()].imag() != 0.0);
+  return new Real(u->value() != v->value());
 }
 
 Real *ne(Complex *u, Complex *v) {
-  return new Real((*u->data())[u->index()] != (*v->data())[v->index()]);
+  return new Real(u->value() != v->value());
 }
 
 Real *ne(Vector *u, Vector *v) {
@@ -371,11 +368,11 @@ Real *add(Real *u, Real *v) {
 }
 
 Complex *add(Real *u, Complex *v) {
-  return new Complex(u->value() + (*v->data())[v->index()]);
+  return new Complex(u->value() + v->value());
 }
 
 Complex *add(Complex *u, Complex *v) {
-  return new Complex((*u->data())[u->index()] + (*v->data())[v->index()]);
+  return new Complex(u->value() + v->value());
 }
 
 Vector *add(Vector *u, Vector *v) {
@@ -427,15 +424,15 @@ Real *subtract(Real *u, Real *v) {
 }
 
 Complex *subtract(Real *u, Complex *v) {
-  return new Complex(u->value() - (*v->data())[v->index()]);
+  return new Complex(u->value() - v->value());
 }
 
 Complex *subtract(Complex *u, Real *v) {
-  return new Complex((*u->data())[u->index()] - v->value());
+  return new Complex(u->value() - v->value());
 }
 
 Complex *subtract(Complex *u, Complex *v) {
-  return new Complex((*u->data())[u->index()] - (*v->data())[v->index()]);
+  return new Complex(u->value() - v->value());
 }
 
 Vector *subtract(Vector *u, Vector *v) {
@@ -488,11 +485,11 @@ Real *multiply(Real *u, Real *v) {
 }
 
 Complex *multiply(Real *u, Complex *v) {
-  return new Complex(u->value() * (*v->data())[v->index()]);
+  return new Complex(u->value() * v->value());
 }
 
 Complex *multiply(Complex *u, Complex *v) {
-  return new Complex((*u->data())[u->index()] * (*v->data())[v->index()]);
+  return new Complex(u->value() * v->value());
 }
 
 Vector *multiply(Real *u, Vector *v) {
@@ -569,15 +566,15 @@ Real *divide(Real *u, Real *v) {
 }
 
 Complex *divide(Real *u, Complex *v) {
-  return new Complex(u->value() / (*v->data())[v->index()]);
+  return new Complex(u->value() / v->value());
 }
 
 Complex *divide(Complex *u, Real *v) {
-  return new Complex((*u->data())[u->index()] / v->value());
+  return new Complex(u->value() / v->value());
 }
 
 Complex *divide(Complex *u, Complex *v) {
-  return new Complex((*u->data())[u->index()] / (*v->data())[v->index()]);
+  return new Complex(u->value() / v->value());
 }
 
 Vector *divide(Vector *u, Real *v) {
@@ -644,7 +641,7 @@ Real *negate(Real *u) {
 }
 
 Complex *negate(Complex *u) {
-  return new Complex(-(*u->data())[u->index()]);
+  return new Complex(-u->value());
 }
 
 Vector *negate(Vector *u) {
@@ -680,15 +677,15 @@ Real *power(Real *u, Real *v) {
 }
 
 Complex *power(Real *u, Complex *v) {
-  return new Complex(pow(u->value(), (*v->data())[v->index()]));
+  return new Complex(pow(u->value(), v->value()));
 }
 
 Complex *power(Complex *u, Real *v) {
-  return new Complex(pow((*u->data())[u->index()], v->value()));
+  return new Complex(pow(u->value(), v->value()));
 }
 
 Complex *power(Complex *u, Complex *v) {
-  return new Complex(pow((*u->data())[u->index()], (*v->data())[v->index()]));
+  return new Complex(pow(u->value(), v->value()));
 }
 
 Value_ptr power(Value *u, Value *v) {

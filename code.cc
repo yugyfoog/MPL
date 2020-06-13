@@ -17,7 +17,7 @@
 Value_ptr value(Value_ptr u) {
   for (;;) {
     if (u == 0)
-      return 0;
+      mpl_error("void value");
     if (typeid(*u) == typeid(Memory_Reference))
       u = ((Memory_Reference *)u.get())->value();
     else if (typeid(*u) == typeid(List_Member))

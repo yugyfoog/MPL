@@ -48,8 +48,7 @@ public:
   }
   ~Complex() { }
   std::string print() const;
-  complex_ptr data() { return base; }
-  int index() { return indx; }
+  std::complex<double> value() const { return (*base)[indx]; }
 };
 
 class Vector : public Value {
@@ -64,6 +63,7 @@ public:
   std::string print() const;
   double_ptr data() { return base; }
   std::slice index() { return indx; }
+  int size() { return indx.size(); }
 };
 
 class CVector : public Value {
@@ -176,4 +176,3 @@ public:
 };
 
 std::string type_name(Value *);
-void check_null(Value *);
