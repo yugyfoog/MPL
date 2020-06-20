@@ -94,13 +94,35 @@ std::string Vector::print() const {
   return s.str();
 }
 
-CVector::CVector(List *l, int i) {
-  XXX();
+CVector::CVector(List *l, int n) {
+  // l is a list of ONLY Real and Complex
+  base = complex_ptr(new std::valarray<std::complex<double>>(n));
+  indx = std::slice(0, n, 1);
+  std::slice lindex = l->index();
+  auto u = l->data();
+  for (int i = 0; i < n; i++) {
+    int j = lindex.stride()*i + lindex.start();
+    if (typeid(*(*u.get())[j].get()) == typeid(Real))
+      (*base)[i] = ((Real *)(*u.get())[j].get())->value();
+    else if (typeid(*(*u.get())[j].get()) == typeid(Complex))
+      (*base)[i] = ((Complex *)(*u.get())[j].get())->value();
+    else
+      mpl_error("internal error"); // we shoule never get here
+  }
 }
 
 std::string CVector::print() const {
-  XXX();
-  return 0;
+  std::ostringstream s;
+
+  s << "[";
+  std::valarray<std::complex<double>> *p = base.get();
+  s << (*p)[indx.start()];
+  for (int i = 1; i < (int)indx.size(); i++) {
+    int ii = indx.stride()*i + indx.start();
+    s << ", " << (*p)[ii];
+  }
+  s << "]";
+  return s.str();
 }
 
 Matrix::Matrix(List *l, int r, int c) {

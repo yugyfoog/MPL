@@ -200,7 +200,6 @@ Value_ptr mpl_eof() {
   return Value_ptr(new Real(std::cin.eof()));
 }
 
-
 Value_ptr mpl_type() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real))
@@ -209,9 +208,9 @@ Value_ptr mpl_type() {
     return Value_ptr(new Real(2.0));
   if (typeid(*x) == typeid(Vector))
     return Value_ptr(new Real(3.0));
-  /*
   if (typeid(*x) == typeid(CVector))
     return Value_ptr(new Real(4.0));
+  /*
   if (typeid(*x) == typeid(Matrix))
     return Value_ptr(new Real(5.0));
   if (typeid(*x) == typeid(CMatrix))

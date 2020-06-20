@@ -31,6 +31,7 @@ public:
     base = double_ptr(new std::valarray<double>(x, 1));
     indx = 0;
   }
+  Real(double_ptr b, int i) : base(b), indx(i) { }
   ~Real() { }
   std::string print() const;
   double value() const { return (*base.get())[indx]; }
@@ -71,6 +72,7 @@ private:
   complex_ptr base;
   std::slice indx;
 public:
+  CVector(complex_ptr b, std::slice i) : base(b), indx(i) { }
   CVector(List *, int);
   ~CVector() { }
   std::string print() const;

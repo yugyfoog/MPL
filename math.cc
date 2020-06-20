@@ -122,11 +122,29 @@ Real *eq(Vector *u, Vector *v) {
   if (u->index().size() != v->index().size())
     return new Real(0.0);
   int n = u->index().size();
-  for (int i = 0; i < n; i++) {
-    int j = u->index().stride()*i + u->index().start();
-    int k = v->index().stride()*i + v->index().start();
-    if ((*u->data())[j] != (*v->data())[k])
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    if ((*u->data())[i] != (*v->data())[j])
       return new Real(0.0);
+    i += u->index().stride();
+    j += v->index().stride();
+  }
+  return new Real(1.0);
+}
+
+Real *eq(CVector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    return new Real(0.0);
+  int n = u->index().size();
+
+  int i = u->index().start();
+  int j = v->index().start();
+  while(n--) {
+    if ((*u->data())[i]  != (*v->data())[j])
+      return new Real(0.0);
+    i += u->index().stride();
+    j += v->index().stride();
   }
   return new Real(1.0);
 }
@@ -162,7 +180,11 @@ Value_ptr eq(Value *u, Value *v) {
   }
   else if (typeid(*u) == typeid(Vector)) {
     if (typeid(*v) == typeid(Vector))
-      return Value_ptr(eq((Vector *)v, (Vector *)v));
+      return Value_ptr(eq((Vector *)u, (Vector *)v));
+  }
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(eq((CVector *)v, (CVector *)u));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
@@ -383,6 +405,27 @@ Vector *add(Vector *u, Vector *v) {
   return new Vector(double_ptr(w), std::slice(0, w->size(), 1));
 }
 
+CVector *add(Vector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector addition");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
+  // *w += (*u->data())[u->index()];
+  int j = u->index().start();
+  for (int i = 0; i < (int)w->size(); i++) {
+    (*w)[i] += (*u->data())[j];
+    j += u->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *add(CVector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector addition");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  *w += (*v->data())[v->index()];
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
 String *add(String *u, String *v) {
   int size = u->index().size() + v->index().size();
   std::valarray<char> x(size);
@@ -409,6 +452,14 @@ Value_ptr add(Value *u, Value *v) {
   else if (typeid(*u) == typeid(Vector)) {
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(add((Vector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(add((Vector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(add((Vector *)v, (CVector *)u));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(add((CVector *)v, (CVector *)u));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
@@ -437,10 +488,42 @@ Complex *subtract(Complex *u, Complex *v) {
 
 Vector *subtract(Vector *u, Vector *v) {
   if (u->index().size() != v->index().size())
-    mpl_error("sizes unequal in vector addition");
+    mpl_error("sizes unequal in vector subtraction");
   std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
   *w -= (*v->data())[v->index()];
   return new Vector(double_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *subtract(Vector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector subtraction");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
+  int j = u->index().start();
+  for (int i = 0; i < (int)w->size(); i++) {
+    (*w)[i] = (*u->data())[j] - (*w)[i];
+    j += u->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *subtract(CVector *u, Vector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector subtraction");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  int j = v->index().start();
+  for (int i = 0; i < (int)w->size(); i++) {
+    (*w)[i] -= (*v->data())[j];
+    j += v->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *subtract(CVector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector subtraction");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  *w -= (*v->data())[v->index()];
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
 }
 
 String *subtract(String *u, String *v) {
@@ -471,6 +554,14 @@ Value_ptr subtract(Value *u, Value *v) {
   else if (typeid(*u) == typeid(Vector)) {
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(subtract((Vector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(subtract((Vector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(subtract((CVector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(subtract((CVector *)u, (CVector *)v));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
@@ -493,9 +584,24 @@ Complex *multiply(Complex *u, Complex *v) {
 }
 
 Vector *multiply(Real *u, Vector *v) {
-  std::valarray<double> *w = new std::valarray<double>((*v->data())[v->index()]);
+  auto *w = new std::valarray<double>((*v->data())[v->index()]);
   *w *= u->value();
   return new Vector(double_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *multiply(Complex *u, Vector *v) {
+  // auto *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
+  auto *w = new std::valarray<std::complex<double>>(v->index().size());
+  for (int i = 0, j = v->index().start(); i < (int)v->index().size(); i++, j += v->index().stride())
+    (*w)[i] = (*v->data())[j];
+  *w *= u->value();
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *multiply(Complex *u, CVector *v) {
+  auto *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
+  *w *= u->value();
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
 }
 
 Real *multiply(Vector *u, Vector *v) {
@@ -509,6 +615,12 @@ Real *multiply(Vector *u, Vector *v) {
     p += (*u->data())[j]*(*v->data())[k];
   }
   return new Real(p);
+}
+
+CVector *multiply(Real *u, CVector *v) {
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
+  *w *= u->value();
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
 }
 
 String *multiply(Real *u, String *v) {
@@ -537,6 +649,8 @@ Value_ptr multiply(Value *u, Value *v) {
       return Value_ptr(multiply((Real *)u, (Complex *)v));
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(multiply((Real *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(multiply((Real *)u, (CVector *)v));
     if (typeid(*v) == typeid(String))
       return Value_ptr(multiply((Real *)u, (String *)v));
   }
@@ -545,12 +659,24 @@ Value_ptr multiply(Value *u, Value *v) {
       return Value_ptr(multiply((Real *)v, (Complex *)u));
     if (typeid(*v) == typeid(Complex))
       return Value_ptr(multiply((Complex *)u, (Complex *)v));
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(multiply((Complex *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(multiply((Complex *)u, (CVector *)v));
   }
   else if (typeid(*u) == typeid(Vector)) {
     if (typeid(*v) == typeid(Real))
       return Value_ptr(multiply((Real *)v, (Vector *)u));
+    if (typeid(*v) == typeid(Complex))
+      return Value_ptr(multiply((Complex *)v, (Vector *)u));
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(multiply((Vector *)u, (Vector *)v));
+  }
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Real))
+      return Value_ptr(multiply((Real *)v, (CVector *)u));
+    if (typeid(*v) == typeid(Complex))
+      return Value_ptr(multiply((Complex *)v, (CVector *)u));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(Real))
@@ -718,7 +844,7 @@ Real *simple_index(Vector *a, Real *i) {
   int n = round(i->value());
   if (n >= (int)a->index().size())
     mpl_error("index out of range");
-  return new  Real((*a->data())[a->index().stride()*n + a->index().start()]);
+  return new Real(a->data(), a->index().stride()*n + a->index().start());
 }
 
 Vector *simple_index(Vector *a, Slice *i) {
@@ -785,7 +911,7 @@ void assign(Vector *u, Vector *v) {
   std::slice vindex = v->index();
   int minsize = std::min(uindex.size(), vindex.size());
   uindex = std::slice(uindex.start(), minsize, uindex.stride());
-  vindex = std::slice(vindex.start(), minsize, uindex.stride());
+  vindex = std::slice(vindex.start(), minsize, vindex.stride());
   (*udata.get())[uindex] = (*vdata.get())[vindex];
 }
 
