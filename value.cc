@@ -7,38 +7,9 @@
 #include <complex>
 #include <valarray>
 #include <memory>
+#include <typeinfo>
 #include "value.hh"
 #include "mpl.hh"
-
-std::string type_name(Value *x) {
-  if (typeid(*x) == typeid(Real))
-    return "real";
-  if (typeid(*x) == typeid(Complex))
-    return "complex";
-  if (typeid(*x) == typeid(Vector))
-    return "vector";
-  if (typeid(*x) == typeid(CVector))
-    return "complex vector";
-  if (typeid(*x) == typeid(Matrix))
-    return "matrix";
-  if (typeid(*x) == typeid(CMatrix))
-    return "complex matrix";
-  if (typeid(*x) == typeid(String))
-    return "string";
-  if (typeid(*x) == typeid(List))
-    return "list";
-  if (typeid(*x) == typeid(List_Member))
-    return "list member";
-  if (typeid(*x) == typeid(Slice))
-    return "slice";
-  if (typeid(*x) == typeid(Memory_Reference))
-    return "memory reference";
-  if (typeid(*x) == typeid(Value))
-    return "value";
-  return "unknown";
-}
-
-Value::~Value() { }
 
 std::string Real::print() const {
   std::ostringstream s;
@@ -56,13 +27,6 @@ Vector::Vector(int s) {
   base = double_ptr(new std::valarray<double>(s));
   indx = std::slice(0, s, 1);
 }
-
-/*
-Vector::Vector(double_ptr x) {
-  base = x;
-  indx = std::slice(0, base->size(), 1);
-}
-*/
 
 // construct a vector[n] from a list of reals
 // characterize already ensured that they are all reals
@@ -125,13 +89,85 @@ std::string CVector::print() const {
   return s.str();
 }
 
+
+/*
+
+   given  List {{1, 2, 3}, {4, 5, 6}}
+
+start  = 0
+size   = r,c (3,2)
+stride = 1,c (1,3)
+
+           +-----+-+-+
+           |     | | |
+       >---+-+-+ | | |
+           | | | | | |
+           | | | | | |
+           | | | | | |
+valarray  [1,2,3,4,5,6]
+
+ */
+
 Matrix::Matrix(List *l, int r, int c) {
-  XXX();
+  base = double_ptr(new std::valarray<double>(r*c));
+  
+  // (row size, col size) i.e. (number of cols, number of rows)
+  std::size_t lengths[] = {(size_t)c, (size_t)r};
+
+  // (row stride, col stride)
+  std::size_t strides[] = {1, (size_t)c};
+
+  indx = std::gslice(0, std::valarray<std::size_t>(lengths,2),
+		     std::valarray<std::size_t>(strides, 2));
+
+  auto u = l->data();
+  int ii = l->index().start();
+
+  int k = 0;
+  for (int i = 0; i < r; i++) {
+    auto v = (List *)((*u.get()))[ii].get();
+    int jj = v->index().start();
+    for (int j = 0; j < c; j++) {
+      (*base)[k++] = ((Real *)(*v->data())[jj].get())->value();
+      jj += v->index().stride();
+    }
+    ii += l->index().stride();
+  }
 }
 
 std::string Matrix::print() const {
-  XXX();
-  return 0;
+  std::ostringstream s;
+
+  std::valarray<double> *p = base.get();
+  
+  s << "[";
+
+  int m = indx.size()[1] - 1;   // column size (number of rows)
+  // print matrix
+
+  int i = indx.start();
+  int n = indx.size()[0] - 1;
+  int j = i;
+  s << (*p)[j];
+  j += indx.stride()[0];
+  while (n--) {
+    s << ", " << (*p)[j];
+    j += indx.stride()[0];
+  }
+  i += indx.stride()[1];
+  while (m--) {
+    n = indx.size()[0] - 1; // row size (number of columns)
+    j = i;
+    s << " | " << (*p)[j];
+    j += indx.stride()[0];
+    while (n--) {
+      s << ", " << (*p)[j];
+      j += indx.stride()[0]; // row stride
+    }
+    i += indx.stride()[1]; // column stride
+  }
+  s << "]";
+  return s.str();
 }
 
 CMatrix::CMatrix(List *l, int r, int c) {

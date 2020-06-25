@@ -9,7 +9,7 @@ typedef std::shared_ptr<std::vector<Value_ptr>> list_ptr;
 class Value {
 public:
   Value() { }
-  virtual ~Value() = 0;
+  virtual ~Value() { };
   virtual std::string print() const = 0;
 };
 
@@ -47,9 +47,11 @@ public:
     base = complex_ptr(new std::valarray<std::complex<double>>(x, 1));
     indx = 0;
   }
+  Complex(complex_ptr b, int i) : base(b), indx(i) { }
   ~Complex() { }
   std::string print() const;
   std::complex<double> value() const { return (*base)[indx]; }
+  void set(std::complex<double> const &x) { (*base)[indx] = x; }
 };
 
 class Vector : public Value {
@@ -177,4 +179,3 @@ public:
   Value_ptr value();
 };
 
-std::string type_name(Value *);

@@ -8,6 +8,7 @@
 #include <complex>
 #include <valarray>
 #include <memory>
+#include <typeinfo>
 #include <cctype>
 #include "value.hh"
 #include "code.hh"
@@ -675,7 +676,6 @@ void command_loop() {
       Code *cmd = compile();
       line_end();
       if (cmd) {
-	// print_code(cmd);
 	cmd->execute();
 	delete cmd;
       }

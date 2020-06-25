@@ -7,6 +7,7 @@
 #include <complex>
 #include <valarray>
 #include <memory>
+#include <typeinfo>
 #include "value.hh"
 #include "code.hh"
 #include "function.hh"
@@ -325,7 +326,7 @@ Value_ptr mpl_sqrt() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(sqrt(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -340,7 +341,7 @@ Value_ptr mpl_exp() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(exp(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -351,7 +352,7 @@ Value_ptr mpl_expm1() {
     Real *u = (Real *)x;
     return Value_ptr(new Real(expm1(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -366,7 +367,7 @@ Value_ptr mpl_log() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(log(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -377,7 +378,7 @@ Value_ptr mpl_log1p() {
     Real *u = (Real *)x;
     return Value_ptr(new Real(log1p(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -392,7 +393,7 @@ Value_ptr mpl_log10() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(log10(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -407,7 +408,7 @@ Value_ptr mpl_sin() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(sin(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -422,7 +423,7 @@ Value_ptr mpl_cos() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(cos(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -438,7 +439,7 @@ Value_ptr mpl_tan() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(tan(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -453,7 +454,7 @@ Value_ptr mpl_asin() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(asin(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -468,7 +469,7 @@ Value_ptr mpl_acos() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(acos(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -483,7 +484,7 @@ Value_ptr mpl_atan() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(atan(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -510,7 +511,7 @@ Value_ptr mpl_sinh() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(sinh(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -525,7 +526,7 @@ Value_ptr mpl_cosh() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(cosh(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -540,7 +541,7 @@ Value_ptr mpl_tanh() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(tanh(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -555,7 +556,7 @@ Value_ptr mpl_asinh() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(asinh(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -570,7 +571,7 @@ Value_ptr mpl_acosh() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(acosh(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -585,7 +586,7 @@ Value_ptr mpl_atanh() {
     Complex *u = (Complex *)x;
     return Value_ptr(new Complex(atanh(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }
@@ -596,7 +597,7 @@ Value_ptr mpl_gamma() {
     Real *u = (Real *)x;
     return Value_ptr(new Real(tgamma(u->value())));
   }
-  std::cout << type_name(x) << std::endl;
+  std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;
   exit(1);
 }

@@ -8,6 +8,7 @@
 #include <valarray>
 #include <complex>
 #include <memory>
+#include <typeinfo>
 #include <cmath>
 #include "value.hh"
 #include "math.hh"
@@ -133,6 +134,21 @@ Real *eq(Vector *u, Vector *v) {
   return new Real(1.0);
 }
 
+Real *eq(Vector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    return new Real(0.0);
+  int n = u->index().size();
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    if ((*u->data())[i] != (*v->data())[j])
+      return new Real(0.0);
+    i += u->index().stride();
+    j += v->index().stride();
+  }
+  return new Real(1.0);
+}
+
 Real *eq(CVector *u, CVector *v) {
   if (u->index().size() != v->index().size())
     return new Real(0.0);
@@ -181,16 +197,20 @@ Value_ptr eq(Value *u, Value *v) {
   else if (typeid(*u) == typeid(Vector)) {
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(eq((Vector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(eq((Vector *)u, (CVector *)v));
   }
   else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(eq((Vector *)v, (CVector *)u));
     if (typeid(*v) == typeid(CVector))
-      return Value_ptr(eq((CVector *)v, (CVector *)u));
+      return Value_ptr(eq((CVector *)u, (CVector *)v));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
       return Value_ptr(eq((String *)u, (String *)v));
   }
-  std::cout << "don't know how to eq " << type_name(u) << " and " << type_name(v) << std::endl;
+  std::cout << "don't know how to eq " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
   mpl_error("type error");
   return 0;
 }
@@ -211,11 +231,43 @@ Real *ne(Vector *u, Vector *v) {
   if (u->index().size() != v->index().size())
     return new Real(1.0);
   int n = u->index().size();
-  for (int i = 0; i < n; i++) {
-    int j = u->index().stride()*i + u->index().start();
-    int k = v->index().stride()*i + v->index().start();
-    if ((*u->data())[j] != (*v->data())[k])
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    if ((*u->data())[i] != (*v->data())[j])
       return new Real(1.0);
+    i += u->index().stride();
+    j += v->index().stride();
+  }
+  return new Real(0.0);
+}
+
+Real *ne(Vector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    return new Real(1.0);
+  int n = u->index().size();
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    if ((*u->data())[i] != (*v->data())[j])
+      return new Real(1.0);
+    i += u->index().stride();
+    j += v->index().stride();
+  }
+  return new Real(0.0);
+}
+
+Real *ne(CVector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    return new Real(1.0);
+  int n = u->index().size();
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    if ((*u->data())[i] != (*v->data())[j])
+      return new Real(1.0);
+    i += u->index().stride();
+    j += v->index().stride();
   }
   return new Real(0.0);
 }
@@ -252,6 +304,14 @@ Value_ptr ne(Value *u, Value *v) {
   else if (typeid(*u) == typeid(Vector)) {
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(ne((Vector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(ne((Vector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(ne((Vector *)v, (CVector *)u));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(ne((CVector *)u, (CVector *)v));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
@@ -465,7 +525,7 @@ Value_ptr add(Value *u, Value *v) {
     if (typeid(*v) == typeid(String))
       return Value_ptr(add((String *)u, (String *)v));
   }
-  std::cout << "don't know how to add " << type_name(u) << " and " << type_name(v) << std::endl;
+  std::cout << "don't know how to add " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
   mpl_error("type error");
   return 0;
 }
@@ -590,7 +650,6 @@ Vector *multiply(Real *u, Vector *v) {
 }
 
 CVector *multiply(Complex *u, Vector *v) {
-  // auto *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
   auto *w = new std::valarray<std::complex<double>>(v->index().size());
   for (int i = 0, j = v->index().start(); i < (int)v->index().size(); i++, j += v->index().stride())
     (*w)[i] = (*v->data())[j];
@@ -609,18 +668,72 @@ Real *multiply(Vector *u, Vector *v) {
     mpl_error("sizes unequal in vector multiplication");
   int n = u->index().size();
   double p = 0.0;
-  for (int i = 0; i < n; i++) {
-    int j = u->index().stride()*i + u->index().start();
-    int k = v->index().stride()*i + v->index().start();
-    p += (*u->data())[j]*(*v->data())[k];
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    p += (*u->data())[i]*(*v->data())[j];
+    i += u->index().stride();
+    j += v->index().stride();
   }
   return new Real(p);
+}
+
+// for complex vectors, x*y == conj(y*x)
+// we can calculate u*v as conj(v*u)
+// That way we can avoid taking the conjucates of
+// the members of v since they are all real
+
+Complex *multiply(Vector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector multiplication");
+  int n = u->index().size();
+  std::complex<double> p = 0;
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    p += (*u->data())[i]*(*v->data())[j];
+    i += u->index().stride();
+    j += u->index().stride();
+  }
+  return new Complex(conj(p));
+}
+
+// since v are all real no need for conjugation
+
+Complex *multiply(CVector *u, Vector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector multiplication");
+  int n = u->index().size();
+  std::complex<double> p = 0;
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    p += (*u->data())[i]*(*v->data())[j];
+    i += u->index().stride();
+    j += u->index().stride();
+  }
+  return new Complex(p);
 }
 
 CVector *multiply(Real *u, CVector *v) {
   std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
   *w *= u->value();
   return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+Complex *multiply(CVector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in vector multiplication");
+  int n = u->index().size();
+  std::complex<double> p = 0.0;
+  int i = u->index().start();
+  int j = v->index().start();
+  while (n--) {
+    p += (*u->data())[i]*conj((*v->data())[j]);
+    i += u->index().stride();
+    j += v->index().stride();
+  }
+  return new Complex(p);
 }
 
 String *multiply(Real *u, String *v) {
@@ -671,18 +784,24 @@ Value_ptr multiply(Value *u, Value *v) {
       return Value_ptr(multiply((Complex *)v, (Vector *)u));
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(multiply((Vector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(multiply((Vector *)u, (CVector *)v));
   }
   else if (typeid(*u) == typeid(CVector)) {
     if (typeid(*v) == typeid(Real))
       return Value_ptr(multiply((Real *)v, (CVector *)u));
     if (typeid(*v) == typeid(Complex))
       return Value_ptr(multiply((Complex *)v, (CVector *)u));
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(multiply((CVector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(multiply((CVector *)u, (CVector *)v));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(Real))
       return Value_ptr(multiply((Real *)v, (String *)u));
   }
-  std::cout << "don't know how to multiply " << type_name(u) << " and " << type_name(v) << std::endl;
+  std::cout << "don't know how to multiply " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
   mpl_error("type error");
   return 0;
 }
@@ -709,6 +828,39 @@ Vector *divide(Vector *u, Real *v) {
   return new Vector(double_ptr(w), std::slice(0,w->size(),1));
 }
 
+CVector *divide(Vector *u, Complex *v) {
+  int n = u->index().size();
+  auto *w = new std::valarray<std::complex<double>>(n);
+  int j = u->index().start();
+  for (int i = 0; i < n; i++) {
+    (*w)[i] = (*u->data())[j]/v->value();
+    j += u->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, n, 1));
+}
+
+CVector *divide(CVector *u, Real *v) {
+  int n = u->index().size();
+  auto *w = new std::valarray<std::complex<double>>(n);
+  int j = u->index().start();
+  for (int i = 0; i < n; i++) {
+    (*w)[i] = (*u->data())[j]/v->value();
+    j += u->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, n, 1));
+}
+
+CVector *divide(CVector *u, Complex *v) {
+  int n = u->index().size();
+  auto *w = new std::valarray<std::complex<double>>(n);
+  int j = u->index().start();
+  for (int i = 0; i < n; i++) {
+    (*w)[i] = (*u->data())[j]/v->value();
+    j += u->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, n, 1));
+}
+
 Value_ptr divide(Value *u, Value *v) {
   if (typeid(*u) == typeid(List) || typeid(*v) == typeid(List))
     return dolist(u, v, divide);
@@ -727,8 +879,16 @@ Value_ptr divide(Value *u, Value *v) {
   else if (typeid(*u) == typeid(Vector)) {
     if (typeid(*v) == typeid(Real))
       return Value_ptr(divide((Vector *)u, (Real *)v));
+    if (typeid(*v) == typeid(Complex))
+      return Value_ptr(divide((Vector *)u, (Complex *)v));
   }
-  std::cout << "don't know how to divide " << type_name(u) << " and " << type_name(v) << std::endl;
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Real))
+      return Value_ptr(divide((CVector *)u, (Real *)v));
+    if (typeid(*v) == typeid(Complex))
+      return Value_ptr(divide((CVector *)u, (Complex *)v));
+  }
+  std::cout << "don't know how to divide " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
   mpl_error("type_error");
   return 0;
 }
@@ -771,9 +931,15 @@ Complex *negate(Complex *u) {
 }
 
 Vector *negate(Vector *u) {
-  std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
+  auto *w = new std::valarray<double>((*u->data())[u->index()]);
   *w = -(*w);
   return new Vector(double_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *negate(CVector *u) {
+  auto *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  *w = -(*w);
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
 }
 
 String *negate(String *u) {
@@ -792,8 +958,11 @@ Value_ptr negate(Value *u) {
     return Value_ptr(negate((Complex *)u));
   if (typeid(*u) == typeid(Vector))
     return Value_ptr(negate((Vector *)u));
+  if (typeid(*u) == typeid(CVector))
+    return Value_ptr(negate((CVector *)u));
   if (typeid(*u) == typeid(String))
     return Value_ptr(negate((String *)u));
+  std::cout << "don't know how to negate " << typeid(*u).name() << std::endl;
   mpl_error("type error");
   return 0;
 }
@@ -842,13 +1011,24 @@ std::slice compose(std::slice const &a, std::slice const &b) {
 
 Real *simple_index(Vector *a, Real *i) {
   int n = round(i->value());
-  if (n >= (int)a->index().size())
+  if (n < 0 || n >= (int)a->index().size())
     mpl_error("index out of range");
   return new Real(a->data(), a->index().stride()*n + a->index().start());
 }
 
 Vector *simple_index(Vector *a, Slice *i) {
   return new Vector(a->data(), compose(a->index(), i->slice()));
+}
+
+Complex *simple_index(CVector *a, Real *i) {
+  int n = round(i->value());
+  if (n < 0 || n >= (int)a->index().size())
+    mpl_error("index out of range");
+  return new Complex(a->data(), a->index().stride()*n + a->index().start());
+}
+  
+CVector *simple_index(CVector *a, Slice *i) {
+  return new CVector(a->data(), compose(a->index(), i->slice()));
 }
 
 String *simple_index(String *a, Real *i) {
@@ -882,6 +1062,12 @@ Value_ptr simple_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(simple_index((Vector *)a, (Slice *)i));
   }
+  if (typeid(*a) == typeid(CVector)) {
+    if (typeid(*i) == typeid(Real))
+      return Value_ptr(simple_index((CVector *)a, (Real *)i));
+    if (typeid(*i) == typeid(Slice))
+      return Value_ptr(simple_index((CVector *)a, (Slice *)i));
+  }
   else if (typeid(*a) == typeid(String)) {
     if (typeid(*i) == typeid(Real))
       return Value_ptr(simple_index((String *)a, (Real *)i));
@@ -894,7 +1080,8 @@ Value_ptr simple_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(simple_index((List *)a, (Slice *)i));
   }
-  mpl_error("illegal index: " + type_name(a) + "[" + type_name(i) + "]");
+  std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
+  mpl_error("illegal index");
   return 0;
 }
 
@@ -904,10 +1091,25 @@ void assign(Real *u, Real *v) {
   u->set(v->value());
 }
 
+void assign(Complex *u, Complex *v) {
+  u->set(v->value());
+}
+
 void assign(Vector *u, Vector *v) {
   double_ptr udata = u->data();
   std::slice uindex = u->index();
   double_ptr vdata = v->data();
+  std::slice vindex = v->index();
+  int minsize = std::min(uindex.size(), vindex.size());
+  uindex = std::slice(uindex.start(), minsize, uindex.stride());
+  vindex = std::slice(vindex.start(), minsize, vindex.stride());
+  (*udata.get())[uindex] = (*vdata.get())[vindex];
+}
+
+void assign(CVector *u, CVector *v) {
+  complex_ptr udata = u->data();
+  std::slice uindex = u->index();
+  complex_ptr vdata = v->data();
   std::slice vindex = v->index();
   int minsize = std::min(uindex.size(), vindex.size());
   uindex = std::slice(uindex.start(), minsize, uindex.stride());
@@ -948,7 +1150,7 @@ void assign(List_Member *u, Value_ptr v) {
 }
 
 // v must be a Value_ptr so we can assign it to
-// a List_Member!
+// a List_Member! (if needed)
 
 void assign(Value *u, Value_ptr v) {
   if (typeid(*u) == typeid(Memory_Reference))
@@ -956,15 +1158,21 @@ void assign(Value *u, Value_ptr v) {
   else {
     if (typeid(*u) == typeid(Real) && typeid(*v) == typeid(Real))
       assign((Real *)u, (Real *)v.get());
+    else if (typeid(*u) == typeid(Complex) && typeid(*v) == typeid(Complex))
+      assign((Complex *)u, (Complex *)v.get());
     else if (typeid(*u) == typeid(Vector) && typeid(*v) == typeid(Vector))
       assign((Vector *)u, (Vector *)v.get());
+    else if (typeid(*u) == typeid(CVector) && typeid(*v) == typeid(CVector))
+      assign((CVector *)u, (CVector *)v.get());
     else if (typeid(*u) == typeid(String) && typeid(*v) == typeid(String))
       assign((String *)u, (String *)v.get());
     else if (typeid(*u) == typeid(List) && typeid(*v) == typeid(List))
       assign((List *)u, (List *)v.get());
     else if (typeid(*u) == typeid(List_Member))
       assign((List_Member *)u, v);
-    else
-      mpl_error(type_name(u) + " = " + type_name(v.get()));
+    else {
+      std::cout << typeid(*u).name() << " = " << typeid(*v.get()).name() << std::endl;
+      mpl_error("illegal assignment");
+    }
   }
 }

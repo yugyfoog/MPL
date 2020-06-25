@@ -8,6 +8,7 @@
 #include <complex>
 #include <valarray>
 #include <memory>
+#include <typeinfo>
 #include "value.hh"
 #include "code.hh"
 #include "function.hh"

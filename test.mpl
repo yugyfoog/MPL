@@ -64,35 +64,24 @@ function test_subtraction()
     end
 end
 
-~ real * cvector   -> cvector ****
-~ complex * vector -> cvector ****
-~ complex * cvector -> cvector ***
-
-~ cvector * real -> cvector ***
-~ vector * complex -> cvector ***
-~ cvector * complex -> cvector
-
-~ vector * cvector -> real
-~ cvector * vector -> real
-~ cvector * cvector -> real
-
 function test_multiplication()
     a = { 5, 2, (2,3), (1,2), 2, [1,2,3], [1,2,3], \
           2, (1,2), (1,2), [(1,2),(3,4)], [1,2], \
-	  [(1,2),(3,4)], 2, "abc" }
+	  [(1,2),(3,4)], [1,2], [(1,2),(3,4)], [(1,2),(3,4)], \
+	  2, "abc" }
     b = { 3, (2,3), 2, (3,4), [1,2,3], 2, [2,3,4], \
           [(1,2),(3,4)], [1,2], [(1,2),(3,4)], 2, (1,2), \
-	  (1,2), "abc", 2 }
+	  (1,2), [(1,2),(3,4)], [1,2], [(4,3),(2,1)], "abc", 2 }
     q = { 15, (4,6), (4,6), (-5,10), [2,4,6], [2,4,6], 20, \
           [(2,4),(6,8)], [(1,2),(2,4)], [(-3,4),(-5,10)], \
 	  [(2,4),(6,8)], [(1,2),(2,4)], [(-3,4),(-5,10)], \
-	  "abcabc", "abcabc" }
+	  (7,-10), (7,10), (20,10), "abcabc", "abcabc" }
     s = { "real * real", "real * complex", "complex * real", \
           "complex * complex", "real * vector", "vector * real", \
 	  "vector * vector", "real * cvector", "complex * vector", \
 	  "complex * cvector", "cvector * real", "vector * complex", \
-	  "cvector * complex", "real * string", \
-	  "string * real" }
+	  "cvector * complex", "vector * cvector", "cvector * vector", \
+	  "cvector * cvector", "real * string", "string * real" }
     c = a*b
     i = 0
     while i < size(a)
@@ -102,11 +91,14 @@ function test_multiplication()
 end
 
 function test_division()
-    a = { 6, 13, (4,6), (-5,10), [2,4,6] }
-    b = { 2, (2,-3), 2, (3,4), 2 }
-    q = { 3, (2,3), (2,3), (1,2), [1,2,3] }
+    a = { 6, 13, (4,6), (-5,10), [2,4,6], [1,2], [(1,2),(3,4)], \
+          [(1,2),(3,4)] }
+    b = { 2, (2,-3), 2, (3,4), 2, (1,2), 2, (1,2) }
+    q = { 3, (2,3), (2,3), (1,2), [1,2,3], [(0.2,-0.4),(0.4,-0.8)], \
+          [(0.5,1),(1.5,2)], [(1,0),(2.2,-0.4)] }
     s = { "real / real", "real / complex", "complex / real", \
-          "complex / complex", "vector / real" }
+          "complex / complex", "vector / real", "vector / complex", \
+	  "cvector / real", "cvector / complex" }
     c = a/b
     i = 0
     while i < size(a)
@@ -116,29 +108,11 @@ function test_division()
 end
 
 function test_floored_division()
-    a = { 8 }
-    b = { 3 }
-    q = { 2 }
-    s = { "real div real" }
-    c = a div b
-    i = 0
-    while i < size(a)
-        test(q[i], c[i], s[i])
-        i = i + 1
-    end
+    test(2, 8 div 3, "real div real")
 end
 
 function test_modulo()
-    a = { 8 }
-    b = { 3 }
-    q = { 2 }
-    s = { "real mod real" }
-    c = a mod b
-    i = 0
-    while i < size(a)
-        test(q[i], c[i], s[i])
-        i = i + 1
-    end
+    test(2, 8 mod 3, "real mod real")
 end
 
 function test_exponent()
@@ -156,9 +130,9 @@ function test_exponent()
 end
 
 function test_negation()
-    a = {3, (1,2), [1,2,3], "abc"}
-    q = {-3, (-1,-2), [-1,-2,-3], "cba" }
-    s = { "- real", "- complex", "- vector", "- string" }
+    a = {3, (1,2), [1,2,3], [(1,2),(3,4)], "abc"}
+    q = {-3, (-1,-2), [-1,-2,-3], [(-1,-2),(-3,-4)], "cba" }
+    s = { "- real", "- complex", "- vector", "- cvector", "- string" }
     c = -a
     i = 0
     while i < size(a)
@@ -220,11 +194,14 @@ function test_logic()
 end
 
 function test_eq()
-    a = { 3, 1, (1,2), (1,2), [1,2,3], "abc" }
-    b = { 3, (2,3), 3, (3,4), [1,2,3], "def" }
-    q = { 1, 0, 0, 0, 1, 0 }
+    a = { 3, 1, (1,2), (1,2), [1,2,3], [1,2], [(1,0),(2,0)], \
+          [(1,2),(3,4)], "abc" }
+    b = { 3, (2,3), 3, (3,4), [1,2,3], [(1,0),(2,0)], [1,2], \
+          [(1,2),(3,4)], "def" }
+    q = { 1, 0, 0, 0, 1, 1, 1, 1, 0 }
     s = { "real == real", "real == complex", "complex == real", \
-           "complex == complex", "vector == vector", "string == string" }
+           "complex == complex", "vector == vector", "vector == cvector", \
+	   "cvector == vector", "cvector == cvector", "string == string" }
     c = a == b
     i = 0
     while i < size(a)
@@ -234,11 +211,14 @@ function test_eq()
 end
 
 function test_ne()
-    a = { 3, 1, (1,2), (1,2), [1,2,3], "abc" }
-    b = { 3, (2,3), 3, (3,4), [1,2,3], "def" }
-    q = { 0, 1, 1, 1, 0, 1 }
+    a = { 3, 1, (1,2), (1,2), [1,2,3], [1,2], [(1,0),(2,0)], \
+          [(1,2),(3,4)], "abc" }
+    b = { 3, (2,3), 3, (3,4), [1,2,3], [(1,0),(2,0)], [1,2], \
+          [(1,2),(3,4)], "def" }
+    q = { 0, 1, 1, 1, 0, 0, 0, 0, 1 }
     s = { "real != real", "real != complex", "complex != real", \
-           "complex != complex", "vector != vector", "string != string" }
+           "complex != complex", "vector != vector", "vector != cvector", \
+	   "cvector != vector", "cvector != cvector", "string != string" }
     c = a != b
     i = 0
     while i < size(a)
@@ -321,6 +301,19 @@ function test_vector_index()
     test([1, 2000, 300, 4000], a, "vector[i:i:i] = vector")
 end
 
+function test_cvector_index()
+    a = [(1,2),(3,4),(5,6),(7,8)]
+    test((3,4), a[1], "cvector[i]")
+    test([(3,4),(5,6)], a[1:2], "cvector[i:i]")
+    test([(3,4),(7,8)], a[1:2:2], "cvector[i:i:i]")
+    a[1] = (30,40)
+    test([(1,2),(30,40),(5,6),(7,8)], a, "cvector[i] = real")
+    a[1:2] = [(300,400),(500,600)]
+    test([(1,2),(300,400),(500,600),(7,8)], a, "cvector[i:i] = cvector")
+    a[1:2:2] = [(3000,4000), (7000,8000)]
+    test([(1,2),(3000,4000), (500,600), (7000,8000)], a, "cvector[i:i:i] = vector")
+end
+
 function test_string_index()
     a = "abcdefghijklmnopqrstuvwxyz"
     test("m", a[12], "string[i]")
@@ -353,13 +346,14 @@ end
 
 function test_index()
     test_vector_index()
+    test_cvector_index()
     test_string_index()
     test_list_index()
 end
 
 function test_standard_functions()
     ~ not testing matvec(), exit(), read(), eof()
-    ~ some of these tests may fail due to machine rounding
+    ~ some tests may fail due to machine rounding
     test([0, 0, 0], vector(3), "vector()")
     test("   ", string(3), "string()")
     test({0, 0, 0}, list(3), "list()")
@@ -386,63 +380,54 @@ function test_standard_functions()
     test((0,0), log((1,0)), "log(complex)")
     test(0, log1p(0), "log1p(real)")
     test(1, log10(10), "log10(real)")
-
     test(0, sin(0), "sin(real)")
     test((0,0), sin((0,0)), "sin(complex)")
     test(1, cos(0), "cos(real)")
     test((1,0), cos((0,0)), "cos(complex)")
     test(0, tan(0), "tan(real)")
     test((0,0), tan((0,0)), "tan(complex)")
-
     test(1, csc(PI/2), "csc(real)")
     test((1,0), csc((PI/2,0)), "csc(complex)")
     test(1, sec(0), "sec(real)")
     test((1,0), sec((0,0)), "sec(complex")
     test(1+EPS, cot(PI/4), "cot(real)")
     test((1+EPS,0), cot((PI/4,0)), "cot(complex)")    
-
     test(0, asin(0), "asin(real)")
     test((0,0), asin((0,0)), "asin(complex)")
     test(0, acos(1), "acos(real)")
     test((0,0), acos((1,0)), "acos(complex)")
     test(0, atan(0), "atan(real)")
     test((0,0), atan((0,0)), "atan(complex)")
-
     test(PI/2, acsc(1), "acsc(real)")
     test((PI/2,0), acsc((1,0)), "acsc(comple)")
     test(0, asec(1), "sec(real)")
     test((0,0), asec((1,0)), "sec(complex)")
     test(PI/4, acot(1), "acot(real)")
     test((PI/4,0), acot((1,0)), "acot(complex)")
-
     test(0, sinh(0), "sinh(real)")
     test((0,0), sinh((0,0)), "sinh(complex)")
     test(1, cosh(0), "cosh(real)")
     test((1,0), cosh((0,0)), "cosh(complex)")
     test(0, tanh(0), "tanh(real)")
     test((0,0), tanh((0,0)), "tanh(complex)")
-
     test(0.850918128239321521, csch(1), "csch(real)")
     test((0.850918128239321521,0), csch((1,0)), "csch(complex)")
     test(1, sech(0), "sech(real)")
     test((1,0), sech((0,0)), "sech(complex)")
     test(0.642092615934330624, coth(1), "coth(real)")
     test((0.642092615934330735,0), coth((1,0)), "coth(real)")
-
     test(0, asinh(0), "asinh(real)")
     test((0,0), asinh((0,0)), "asinh(complex)")
     test(0, acosh(1), "acosh(real)")
     test((0,0), acosh((1,0)), "acosh(complex)")
     test(0, atanh(0), "atanh(real)")
     test((0,0), atanh((0,0)), "atanh(complex)")
-
     test(0.88137358701954303, acsch(1), "acsch(real)")
     test((0.881373587019542899,0), acsch((1,0)), "acsch(complex)")
     test(0, asech(1), "asech(real)")
     test((0,0), asech((1,0)), "asech(complex)")
     test(0.549306144334054734, acoth(2), "acoth(real)")
     test((0.549306144334054845,0), acoth((2,0)), "acoth(complex)")
-
     test(120, gamma(6), "gamma(real)")
 end
 
