@@ -157,7 +157,7 @@ std::string read_line() {
     }
 
     // now read
-
+    
     std::getline(*file_stack.top(), next);
     continuation = scan_line(next);
     line += next;
@@ -174,17 +174,23 @@ bool is_id_char(int c) {
 }
 
 bool is_identifier() {
+  if (tokens->empty())
+    return false;
   if (is_id_startchar((*tokens->front())[0]))
     return true;
   return false;
 }
 
 bool is_number() {
+  if (tokens->empty())
+    return false;
   int c = (*tokens->front())[0];
   return isdigit(c) || c == '#' || c== '.';
 }
 
 bool is_string() {
+  if (tokens->empty())
+    return false;
   return (*tokens->front())[0] == '"';
 }
 

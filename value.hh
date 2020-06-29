@@ -88,6 +88,7 @@ private:
   std::gslice indx;
 public:
   Matrix(List *, int, int);
+  Matrix(double_ptr b, std::gslice const &i) : base(b), indx(i) { }
   ~Matrix() { }
   std::string print() const;
   double_ptr data() { return base; }

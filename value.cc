@@ -127,10 +127,15 @@ Matrix::Matrix(List *l, int r, int c) {
   for (int i = 0; i < r; i++) {
     auto v = (List *)((*u.get()))[ii].get();
     int jj = v->index().start();
-    for (int j = 0; j < c; j++) {
+    // the list v may not fill entire row
+    int j = 0;
+    for (; j < (int)v->index().size(); j++) {
       (*base)[k++] = ((Real *)(*v->data())[jj].get())->value();
       jj += v->index().stride();
     }
+    // fill row with 0
+    for (; j < c; j++)
+      (*base)[k++] = 0.0;
     ii += l->index().stride();
   }
 }

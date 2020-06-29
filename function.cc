@@ -89,7 +89,7 @@ void characterize(List *lst, Character *chr) {
     }
   }
 }
- 
+
 Value_ptr mpl_matvec() {
   Character tst;
   
@@ -211,12 +211,10 @@ Value_ptr mpl_type() {
     return Value_ptr(new Real(3.0));
   if (typeid(*x) == typeid(CVector))
     return Value_ptr(new Real(4.0));
-  /*
   if (typeid(*x) == typeid(Matrix))
     return Value_ptr(new Real(5.0));
   if (typeid(*x) == typeid(CMatrix))
     return Value_ptr(new Real(6.0));
-  */
   if (typeid(*x) == typeid(String))
     return Value_ptr(new Real(7.0));
   if (typeid(*x) == typeid(List))

@@ -9,6 +9,7 @@
 #include <complex>
 #include <memory>
 #include <typeinfo>
+#include <numeric>
 #include <cmath>
 #include "value.hh"
 #include "math.hh"
@@ -164,6 +165,37 @@ Real *eq(CVector *u, CVector *v) {
   }
   return new Real(1.0);
 }
+
+Real *eq(Matrix *u, Matrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    return new Real(0.0);
+
+  int cols = ui.size()[0];
+  int rows = vi.size()[1];
+
+  int ii = ui.start();
+  int jj = vi.start();
+  
+  int m = cols;
+  while (m--) {
+    int n = rows;
+
+    int i = ii;
+    int j = jj;
+    while (n--) {
+      if ((*u->data())[i] != (*v->data())[j])
+	return new Real(0.0);
+      i += u->index().stride()[1];
+      j += v->index().stride()[1];
+    }
+    ii += u->index().stride()[0];
+    jj += v->index().stride()[0];
+  }
+  return new Real(1.0);
+}
   
 Real *eq(String *u, String *v) { 
   int i, j, n;
@@ -205,6 +237,10 @@ Value_ptr eq(Value *u, Value *v) {
       return Value_ptr(eq((Vector *)v, (CVector *)u));
     if (typeid(*v) == typeid(CVector))
       return Value_ptr(eq((CVector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(Matrix)) {
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(eq((Matrix *)v, (Matrix *)u));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
@@ -486,6 +522,27 @@ CVector *add(CVector *u, CVector *v) {
   return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
 }
 
+Matrix *add(Matrix *u, Matrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1]) 
+    mpl_error("sizes unequal in matrix addition");
+
+  int cols = ui.size()[0]; 
+  int rows = ui.size()[1];
+
+  // this forces w to column-major, whatever u is.
+  std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
+
+  (*w) += (*v->data())[v->index()];
+
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new Matrix(double_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths,2),
+				   std::valarray<std::size_t>(strides, 2)));
+}
+  
 String *add(String *u, String *v) {
   int size = u->index().size() + v->index().size();
   std::valarray<char> x(size);
@@ -519,7 +576,11 @@ Value_ptr add(Value *u, Value *v) {
     if (typeid(*v) == typeid(Vector))
       return Value_ptr(add((Vector *)v, (CVector *)u));
     if (typeid(*v) == typeid(CVector))
-      return Value_ptr(add((CVector *)v, (CVector *)u));
+      return Value_ptr(add((CVector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(Matrix)) {
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(add((Matrix *)u, (Matrix *)v));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
@@ -586,6 +647,26 @@ CVector *subtract(CVector *u, CVector *v) {
   return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
 }
 
+Matrix *subtract(Matrix *u, Matrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1]) 
+    mpl_error("sizes unequal in matrix subtraction");
+
+  int cols = ui.size()[0]; 
+  int rows = ui.size()[1];
+
+  std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
+
+  (*w) -= (*v->data())[v->index()];
+
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new Matrix(double_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths,2),
+				   std::valarray<std::size_t>(strides, 2)));
+}
+  
 String *subtract(String *u, String *v) {
   int size = u->index().size() + v->index().size();
   std::valarray<char> x(size);
@@ -622,6 +703,10 @@ Value_ptr subtract(Value *u, Value *v) {
       return Value_ptr(subtract((CVector *)u, (Vector *)v));
     if (typeid(*v) == typeid(CVector))
       return Value_ptr(subtract((CVector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(Matrix)) {
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(subtract((Matrix *)u, (Matrix *)v));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(String))
@@ -736,6 +821,76 @@ Complex *multiply(CVector *u, CVector *v) {
   return new Complex(p);
 }
 
+
+Matrix *multiply(Real *u, Matrix *v) {
+  auto *w = new std::valarray<double>((*v->data())[v->index()]);
+  *w *= u->value();
+  std::size_t lengths[] = {v->index().size()[0], v->index().size()[1]};
+  std::size_t strides[] = {v->index().size()[1], 1};
+  return new Matrix(double_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+					       std::valarray<std::size_t>(strides, 2)));
+}
+
+Vector *multiply(Matrix *u, Vector *v) {
+  std::gslice ui = u->index();
+  std::slice vi = v->index();
+  if (ui.size()[0] != vi.size())
+    mpl_error("size mismatch in matrix/vector multiplication");
+  std::valarray<double> *ux = u->data().get();
+  std::valarray<double> *vx = v->data().get();
+  auto *w = new std::valarray<double>(vi.size());
+  int r = ui.start();
+  for (int i = 0; i < v->size(); i++) { // i is the index into w
+    double sum = 0.0;
+    int j = r;
+    int k = vi.start();
+    int n = vi.size();
+    while (n--) {
+      sum += (*ux)[j] * (*vx)[k];
+      j += ui.stride()[0];
+      k += vi.stride();
+    }
+    (*w)[i] = sum;
+    r += ui.stride()[1];
+  }
+  return new Vector(double_ptr(w), std::slice(0, vi.size(), 1));
+}
+
+Matrix *multiply(Matrix *u, Matrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+  if (ui.size()[0] != vi.size()[1])
+    mpl_error("size mismatch in matrix multiplication");
+  std::valarray<double> *ux = u->data().get();
+  std::valarray<double> *vx = v->data().get();
+  auto *w = new std::valarray<double>(ui.size()[1]*vi.size()[0]);
+  int i = 0;
+  int sk = vi.start();
+  int m = ui.size()[0];
+  while (m--) {  // for each column in w (column in v)
+    int sj = ui.start();
+    int n = vi.size()[1];
+    while (n--) { // for each row in w (row in u)
+      double sum = 0.0;
+      int j = sj;
+      int k = sk;
+      int p = ui.size()[0];
+      while (p--) {
+	sum += (*ux)[j] * (*vx)[k];
+	j += ui.stride()[0];
+	k += vi.stride()[1];
+      }
+      (*w)[i++] = sum;
+      sj += ui.stride()[1];
+    }
+    sk += vi.stride()[0];
+  }
+  std::size_t lengths[] = { vi.size()[1], ui.size()[0] };
+  std::size_t strides[] = { ui.size()[0], 1 };
+  return new Matrix(double_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+					       std::valarray<std::size_t>(strides, 2)));
+}
+
 String *multiply(Real *u, String *v) {
   int n = round(u->value());
   std::slice s = v->index();
@@ -766,6 +921,8 @@ Value_ptr multiply(Value *u, Value *v) {
       return Value_ptr(multiply((Real *)u, (CVector *)v));
     if (typeid(*v) == typeid(String))
       return Value_ptr(multiply((Real *)u, (String *)v));
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(multiply((Real *)u, (Matrix *)v));
   }
   else if (typeid(*u) == typeid(Complex)) {
     if (typeid(*v) == typeid(Real))
@@ -796,6 +953,14 @@ Value_ptr multiply(Value *u, Value *v) {
       return Value_ptr(multiply((CVector *)u, (Vector *)v));
     if (typeid(*v) == typeid(CVector))
       return Value_ptr(multiply((CVector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(Matrix)) {
+    if (typeid(*v) == typeid(Real))
+      return Value_ptr(multiply((Real *)v, (Matrix *)u));
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(multiply((Matrix *)u, (Vector *)v));
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(multiply((Matrix *)u, (Matrix *)v));
   }
   else if (typeid(*u) == typeid(String)) {
     if (typeid(*v) == typeid(Real))
