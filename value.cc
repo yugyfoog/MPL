@@ -249,6 +249,8 @@ void List::add_to_front(Value_ptr x) {
   base->insert(base->begin(), x);
 }
 
+// is this function ever called?
+
 std::string List_Member::print() const {
   XXX();
   return 0;

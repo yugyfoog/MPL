@@ -171,6 +171,7 @@ public:
   Value_ptr execute();
 };
 
+/*
 class MatrixIndex : public Code {
 private:
   Code *base;
@@ -181,6 +182,7 @@ public:
   ~MatrixIndex() { delete base; delete row_index; delete col_index; }
   Value_ptr execute();
 };
+*/
 
 class Index : public Code {
 private:

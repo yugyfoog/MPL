@@ -71,7 +71,7 @@ end
 ~ real * matrix ***
 ~ matrix * real ***
 ~ matrix * vector ***
-~ matrix * matrix
+~ matrix * matrix ***
 
 ~ complex * matrix
 ~ cmatrix * real
@@ -90,7 +90,6 @@ end
 
 ~ [ 1 2  [1 3  = [ 5 11
 ~   3 4 ] 2 4]     11 25 ]
-
 
 function test_multiplication()
     a = { 5,                  2,                  (2,3),            (1,2), \
@@ -138,13 +137,13 @@ end
 
 function test_division()
     a = { 6, 13, (4,6), (-5,10), [2,4,6], [1,2], [(1,2),(3,4)], \
-          [(1,2),(3,4)] }
-    b = { 2, (2,-3), 2, (3,4), 2, (1,2), 2, (1,2) }
+          [(1,2),(3,4)], [2,4|6,8] }
+    b = { 2, (2,-3), 2, (3,4), 2, (1,2), 2, (1,2), 2 }
     q = { 3, (2,3), (2,3), (1,2), [1,2,3], [(0.2,-0.4),(0.4,-0.8)], \
-          [(0.5,1),(1.5,2)], [(1,0),(2.2,-0.4)] }
+          [(0.5,1),(1.5,2)], [(1,0),(2.2,-0.4)], [1,2|3,4] }
     s = { "real / real", "real / complex", "complex / real", \
           "complex / complex", "vector / real", "vector / complex", \
-	  "cvector / real", "cvector / complex" }
+	  "cvector / real", "cvector / complex", "matrix / real" }
     c = a/b
     i = 0
     while i < size(a)
@@ -176,9 +175,9 @@ function test_exponent()
 end
 
 function test_negation()
-    a = {3, (1,2), [1,2,3], [(1,2),(3,4)], "abc"}
-    q = {-3, (-1,-2), [-1,-2,-3], [(-1,-2),(-3,-4)], "cba" }
-    s = { "- real", "- complex", "- vector", "- cvector", "- string" }
+    a = {3, (1,2), [1,2,3], [(1,2),(3,4)], [1,2|3,4], "abc"}
+    q = {-3, (-1,-2), [-1,-2,-3], [(-1,-2),(-3,-4)], [-1,-2|-3,-4], "cba" }
+    s = { "- real", "- complex", "- vector", "- cvector", "- matrix", "- string" }
     c = -a
     i = 0
     while i < size(a)
@@ -241,13 +240,13 @@ end
 
 function test_eq()
     a = { 3, 1, (1,2), (1,2), [1,2,3], [1,2], [(1,0),(2,0)], \
-          [(1,2),(3,4)], "abc" }
+          [(1,2),(3,4)], [1,2|3,4], "abc" }
     b = { 3, (2,3), 3, (3,4), [1,2,3], [(1,0),(2,0)], [1,2], \
-          [(1,2),(3,4)], "def" }
-    q = { 1, 0, 0, 0, 1, 1, 1, 1, 0 }
+          [(1,2),(3,4)], [1,2|3,4], "def" }
+    q = { 1, 0, 0, 0, 1, 1, 1, 1, 1, 0 }
     s = { "real == real", "real == complex", "complex == real", \
            "complex == complex", "vector == vector", "vector == cvector", \
-	   "cvector == vector", "cvector == cvector", "string == string" }
+	   "cvector == vector", "cvector == cvector", "matrix == matrix", "string == string" }
     c = a == b
     i = 0
     while i < size(a)
@@ -258,13 +257,14 @@ end
 
 function test_ne()
     a = { 3, 1, (1,2), (1,2), [1,2,3], [1,2], [(1,0),(2,0)], \
-          [(1,2),(3,4)], "abc" }
+          [(1,2),(3,4)], [1,2|3,4], "abc" }
     b = { 3, (2,3), 3, (3,4), [1,2,3], [(1,0),(2,0)], [1,2], \
-          [(1,2),(3,4)], "def" }
-    q = { 0, 1, 1, 1, 0, 0, 0, 0, 1 }
+          [(1,2),(3,4)], [1,2|3,4], "def" }
+    q = { 0, 1, 1, 1, 0, 0, 0, 0, 0, 1 }
     s = { "real != real", "real != complex", "complex != real", \
            "complex != complex", "vector != vector", "vector != cvector", \
-	   "cvector != vector", "cvector != cvector", "string != string" }
+	   "cvector != vector", "cvector != cvector", "matrix != matrix", \
+	   "string != string" }
     c = a != b
     i = 0
     while i < size(a)
@@ -360,6 +360,58 @@ function test_cvector_index()
     test([(1,2),(3000,4000), (500,600), (7000,8000)], a, "cvector[i:i:i] = vector")
 end
 
+function test_matrix_index()
+
+    ~ simple index
+
+    a = [1,2,3|4,5,6|7,8,9]
+    test([4,5,6], a[1], "matrix[i]")
+    test([4,5,6|7,8,9], a[1:2], "matrix[i:i]")
+    test([1,2,3|7,8,9], a[0:2:2], "matrix[i:i:i]")
+    a[1] = [40,50,60]
+    test([1,2,3|40,50,60|7,8,9], a, "matrix[i] = vector")
+    a[1:2] = [44,55,66|77,88,99]
+    test([1,2,3|44,55,66|77,88,99], a, "matrix[i:i] = matrix")
+    a[0:2:2] = [10,20,30|70,80,90]
+    test([10,20,30|44,55,66|70,80,90], a, "matrix[i:i:i] = matrix")
+
+    ~ row index
+
+    a = [1,2,3|4,5,6|7,8,9]
+    test([4,5,6], a[1,], "matrix[i,]")
+    test([4,5,6|7,8,9], a[1:2,], "matrix[i:i,]")
+    test([1,2,3|7,8,9], a[0:2:2,], "matrix[i:i:i,]")
+    a[1,] = [40,50,60]
+    test([1,2,3|40,50,60|7,8,9], a, "matrix[i,] = vector")
+    a[1:2,] = [44,55,66|77,88,99]
+    test([1,2,3|44,55,66|77,88,99], a, "matrix[i:i,] = matrix")
+    a[0:2:2,] = [10,20,30|70,80,90]
+    test([10,20,30|44,55,66|70,80,90], a, "matrix[i:i:i,] = matrix")
+
+    ~ column index
+
+    ~   1 2 3
+    ~   4 5 6
+    ~   7 8 9
+
+    ~  a[,1:2]
+
+    ~  2 3
+    ~  5 6
+    ~  8 9
+
+    a = [1,2,3|4,5,6|7,8,9]
+    test([2, 5, 8], a[,1], "matrix[,i]")
+    test([2,3|5,6|8,9], a[,1:2], "matrix[,i:i]")
+    test([1,3|4,6|7,9], a[,0:2:2], "matrix[,i:i:i]")
+    a[,1] = [20,50,80]
+    test([1,20,3|4,50,6|7,80,9], a, "matrix[,i] = vector")
+    a[,1:2] = [22,33|55,66|88,99]
+    test([1,22,33|4,55,66|7,88,99], a, "matrix[,i:i] = matrix")
+    a[,0:2:2] = [10,30|40,60|70,90]
+    test([10,22,30|40,55,60|70,88,90], a, "matrix[,i:i:i]")
+end
+
 function test_string_index()
     a = "abcdefghijklmnopqrstuvwxyz"
     test("m", a[12], "string[i]")
@@ -393,6 +445,7 @@ end
 function test_index()
     test_vector_index()
     test_cvector_index()
+    test_matrix_index()
     test_string_index()
     test_list_index()
 end

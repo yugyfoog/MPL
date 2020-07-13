@@ -268,18 +268,15 @@ Value_ptr Variable::execute() {
 }
 
 Value_ptr ColumnIndex::execute() {
-  XXX();
-  return 0;
+  Value_ptr a = value(base->execute());
+  Value_ptr i = value(index->execute());
+  return column_index(a.get(), i.get());
 }
 
 Value_ptr RowIndex::execute() {
-  XXX();
-  return 0;
-}
-
-Value_ptr MatrixIndex::execute() {
-  XXX();
-  return 0;
+  Value_ptr a = value(base->execute());
+  Value_ptr i = value(index->execute());
+  return row_index(a.get(), i.get());
 }
 
 Value_ptr Index::execute() {

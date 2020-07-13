@@ -11,7 +11,7 @@
 is a simple impartative mathematical scripting language.
 The intent of this language is for writting small mathematical programs.
 Programs that are to small to need the facilities of a real programming
-language, yet to large for a handheld calculator.
+language, yet too large for a handheld calculator.
 
 If you type a mathematical expression, \emph{MPL} will respond with
 the result.  For example,
@@ -25,7 +25,7 @@ gives
 
 You can also save the results of an expression into a variable.
 \begin{verbatim}
-phi = 0.5 - 0.5*5^0.5
+phi = (1 - sqrt(5))/2
 \end{verbatim}
 And then use that variable in expressions
 \begin{verbatim}
@@ -45,12 +45,22 @@ and then use that function in an expression
 \begin{verbatim}
 fibonacci(101)/fibonacci(100)
 \end{verbatim}
+
+There are several data type built-in to \emph{MPL}.
+In addtion to real (the same as C's double) there are also
+complex, real and complex vectors, real and complex matricies,
+strings and lists.
+The vector and matrix types are \emph{not} general purpose arrays.
+The list type can be used as an array.
+
 \section{Lexical}
 \emph{MPL} is a line oriented language.
 Each statement is on its own line.
-Ending a line with a backslash, \verb|\|, will concatenate the next line
-to the end of the current line.
+If a line is too long you can split it in to two lines by by ending
+the first line with a backslash, \verb|\|.
 Comments start with a tilde, \verb|~|, and continue to the end of the line.
+Backslashes and tildes are considered the same as a space so can only occur
+where spaces are allowed.
 
 Each line is divided into \emph{word symbols}, \emph{numbers},
 \emph{strings}, and \emph{character symbols}.
@@ -63,13 +73,6 @@ There are no reserved words in \emph{MPL} but words with special meaning
 to the language should be avoided for naming variables and functions.
 Also words that begin with an underscore should be avoided.
 
-Numbers can be written as unsigned integers, decimal numbers or
-in scientific notation.
-
-Strings literals start and end with a double quote, \verb|"|,
-and must be on a single line. The C language escape characters
-can be used except octal and hex codes.
-
 \section{Types}
 There are eight data types in MPL. \emph{Real}, \emph{complex},
 \emph{real vector}, \emph{complex vector}, \emph{real matrix}, \emph{complex matrix}, \emph{string}, and \emph{list}. There are no facilities for creating
@@ -77,17 +80,23 @@ addition data types.
 
 \subsection{Real}
 The \emph{real} data type is a double-precision floating point value.\footnote{Hopefully IEEE 754.}
+Real number can be writen as a decimal number with an optional exponent.
+The following are all valid ways to write real numbers:
+\begin{center}
+  \begin{tabular}{cc}
+    \verb|142857| &  \verb|3.14159| \\
+    \verb|6.626e-34| & \verb|6.02214076e23|
+  \end{tabular}
+\end{center}
+You cannot use commas or spaces to format numbers.
 
 The math operators for \emph{real} are \verb|+| (addition),
 \verb|-| (subtraction and negation), \verb|*| (multiplication),
 \verb|/| (division), \verb|div| (floored division), \verb|mod| (modulus),
 and \verb|^| (exponenazation).
-Floored division is $q = \lfloor a/b \rfloor$.
-The modulus operation is then $r = b\lfloor a/b \rfloor - a$.
-Note that these are different than most other languages.
-
-\emph{Real} numbers can be compared using the relational operators
-equal \verb|==|, not equal \verb|!=|, less than \verb|<|, less than or equal \verb|<=|, greater than \verb|>|, and greater then or equal \verb|>=|.  The results of the relational operators is either 1.0 for true and 0.0 for false.
+Floored division ``\verb|a div b|'' is $q = \lfloor a/b \rfloor$.
+The modulus operation ``\verb|a mod b|'' is then $r = b\lfloor a/b \rfloor - a$.
+Note that these are different than many other languages.
 
 Since \emph{MPL} has no Boolean type the Boolean operators use type \emph{real}.
 Any non-zero value is treated as true and zero is reated as false.
@@ -95,15 +104,20 @@ The results are alway either 1.0 for true and 0.0 for false.
 The Boolean operators are \verb|and|, \verb|or|, and \verb|not|.
 The constants \verb|TRUE| and \verb|FALSE| are defined to 1 and 0.
 
-\subsection{Complex}
+\emph{Real} numbers can be compared using the relational operators
+equal \verb|==|, not equal \verb|!=|, less than \verb|<|, less than or equal \verb|<=|, greater than \verb|>|, and greater then or equal \verb|>=|.  The results of the relational operators are either 1.0 for true and 0.0 for false.
 
-The \emph{complex} type is represented by a pair of double precision floating point numbers. They can by typed by surrounding the comma sepreated real and imaginary parts with parenthesis. The number $3 + 4i$ is writen
+
+\subsection{Complex}
+Internally, \emph{complex} numbers use a pair of floating-point numbers to represent the real and imaginary
+parts. They can by typed by surrounding the comma sepreated real and imaginary parts with parenthesis.
+The number $3 + 4i$ is writen
 \begin{verbatim}
-(3,4)
+(3, 4)
 \end{verbatim}
 The values for the parts of a complex number can be any \emph{real} valued
 expression.
-You can used the notation for constructing complex number out of
+You can used this notation for constructing complex number out of
 real number parts.
 \begin{verbatim}
 (cos(x)^2, sqrt(y))
@@ -114,32 +128,52 @@ representation of a complex number.
 3 + 4*I
 \end{verbatim}
 
-To specify a complex number in polar notation there are a few different
-ways.
+To specify a complex number in polar notation there are different options.
 \begin{verbatim}
 polar(2, PI/6)
 2*cis(PI/6)
 2*exp(I*PI/6)
 \end{verbatim}
-all represent the same number.
+all represent the same number. ($2e^{i \pi/6}$.)
 
 To get the real or imaginary parts of a complex number use
 the \verb|real| or \verb|imag| functions.
-To get the magnitude or argument of a complex number use the
-\verb|abs| or the \verb|arg| functions.
+The magnitude and argument of a complex nuber can be found using
+the \verb|abs| and \verb|arg| functions.
 The \verb|norm| function returns the magnitude squared of a
 complex number. To find the complex conjugate of a number
 use the \verb|conj| function.
 
+The arithmetic operator for complex numbers are \verb|+| (addition),
+\verb|-| (subtraction and negation), \verb|*| (multiplication),
+\verb|/| (division), and \verb|^| (exponenazation).
+Complex numbers can be compared for equals, \verb|==|,
+or not equals, \verb|!=|.
+
+If reals and complex are mixed for any operator then the result is complex.
+If only reals are used for operators or functions then the result is real.
+For example, \verb|sqrt(-4)| prints \verb|-nan|, but
+\verb|sqrt((-4,0))| prints \verb|(0,2)|.
+
 \subsection{Vector}
 
 The vector type is a Euclidean $n$-space vector.
-Vectors are not ment to be used as general purpose arrays.
-
 The math operators for vector are \verb|+| (addition),
 \verb|-| (subtraction and negation), \verb|*| (scalar multiplication,
-dot product), \verb|/| (scalar division). 
-
+dot product), \verb|/| (scalar division).
+The following table show the defined operations of vectors.
+\begin{center}
+  \begin{tabular}{ccl}
+    operation & result \\
+    \verb|-| \emph{vector} & \emph{vector} \\
+    \emph{vector} \verb|+| \emph{vector} & \emph{vector} \\
+    \emph{vector} \verb|-| \emph{vector} & \emph{vector} \\
+    \emph{real} \verb|*| \emph{vector} & \emph{vector} & scalar multiplication \\ 
+    \emph{vector} \verb|*| \emph{real} & \emph{vector} & scalar multiplication \\
+    \emph{vector} \verb|*| \emph{vector} & \emph{real} & dot product \\
+    \emph{vector} \verb|/| \emph{real} & \emph{vector} & scalar multiplication \\
+  \end{tabular}
+\end{center}
 
 \section{Expressions}
 \section{Commands}

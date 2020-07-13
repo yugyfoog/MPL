@@ -439,7 +439,7 @@ Code *primary_expression() {
 	      if (check("]"))
 		x = new RowIndex(x, y);
 	      else
-		x = new MatrixIndex(x, y, range());
+		x = new ColumnIndex(new RowIndex(x, y), range());
 	    }
 	    else
 	      x = new Index(x, y);
@@ -451,6 +451,8 @@ Code *primary_expression() {
       }
     }
   }
+  else
+    mpl_error("syntax error in expression");
   return x;
 }
 

@@ -16,4 +16,6 @@ Value_ptr modulo(Value *, Value *);
 Value_ptr negate(Value *);
 Value_ptr power(Value *, Value *);
 Value_ptr simple_index(Value *, Value *);
+Value_ptr row_index(Value *, Value *);
+Value_ptr column_index(Value *, Value *);
 void assign(Value *, Value_ptr);
