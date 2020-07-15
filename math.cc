@@ -1260,7 +1260,7 @@ Value_ptr row_index(Value *a, Value *i) {
       return Value_ptr(row_index((Matrix *)a, (Slice *)i));
   }
   std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
-  mpl_error("illegal index");
+  mpl_error("illegal index 1");
   return 0;
 }
 
@@ -1269,21 +1269,6 @@ Vector *column_index(Matrix *a, Real *i) {
   std::gslice ai = a->index();
   return new Vector(a->data(), std::slice(ai.start() + c*ai.stride()[0], ai.size()[1], ai.stride()[1]));
 }
-/*
-
- 1 2 3
- 4 5 6
- 7 8 9
-
-a[,1:2]
-
-  2 3
-  5 6
-  8 9
-
-
-
- */
 
 Matrix *column_index(Matrix *a, Slice *i) {
   std::slice c = i->slice();
@@ -1296,14 +1281,26 @@ Matrix *column_index(Matrix *a, Slice *i) {
 }  
 
 Value_ptr column_index(Value *a, Value *i) {
-  if (typeid(*a) == typeid(Matrix)) {
+  if (typeid(*a) == typeid(Vector)) {
+    if (typeid(*i) == typeid(Real))
+      return Value_ptr(simple_index((Vector *)a, (Real *)i));
+    if (typeid(*i) == typeid(Slice))
+      return Value_ptr(simple_index((Vector *)a, (Slice *)i));
+  }
+  else if (typeid(*a) == typeid(CVector)) {
+    if (typeid(*i) == typeid(Real))
+      return Value_ptr(simple_index((CVector *)a, (Real *)i));
+    if (typeid(*i) == typeid(Slice))
+      return Value_ptr(simple_index((CVector *)a, (Slice *)i));
+  }
+  else if (typeid(*a) == typeid(Matrix)) {
     if (typeid(*i) == typeid(Real))
       return Value_ptr(column_index((Matrix *)a, (Real *)i));
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(column_index((Matrix *)a, (Slice *)i));
   }
   std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
-  mpl_error("illegal index");
+  mpl_error("illegal index 2");
   return 0;
 }
   
@@ -1361,13 +1358,13 @@ Value_ptr simple_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(simple_index((Vector *)a, (Slice *)i));
   }
-  if (typeid(*a) == typeid(CVector)) {
+  else if (typeid(*a) == typeid(CVector)) {
     if (typeid(*i) == typeid(Real))
       return Value_ptr(simple_index((CVector *)a, (Real *)i));
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(simple_index((CVector *)a, (Slice *)i));
   }
-  if (typeid(*a) == typeid(Matrix)) {
+  else if (typeid(*a) == typeid(Matrix)) {
     if (typeid(*i) == typeid(Real))
       return Value_ptr(row_index((Matrix *)a, (Real *)i));
     if (typeid(*i) == typeid(Slice))
@@ -1386,7 +1383,7 @@ Value_ptr simple_index(Value *a, Value *i) {
       return Value_ptr(simple_index((List *)a, (Slice *)i));
   }
   std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
-  mpl_error("illegal index");
+  mpl_error("illegal index 3");
   return 0;
 }
 

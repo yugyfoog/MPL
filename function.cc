@@ -90,6 +90,15 @@ void characterize(List *lst, Character *chr) {
   }
 }
 
+Value_ptr mpl_gfmt() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) != typeid(Real))
+    mpl_error("formating requires real");
+  std::ostringstream o;
+  o << ((Real *)x)->value();
+  return Value_ptr(new String(o.str()));
+}
+
 Value_ptr mpl_matvec() {
   Character tst;
   

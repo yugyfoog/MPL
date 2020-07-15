@@ -44,7 +44,8 @@ Value_ptr Print::execute() {
       std::cout << "undefined variable" << std::endl;
       exit(1);
     }
-    std::cout << u->print() << std::endl;
+    if (typeid(*u) != typeid(Null))
+      std::cout << u->print() << std::endl;
   }
   return 0;
 }
@@ -88,7 +89,7 @@ bool is_true(Value_ptr t) {
 Value_ptr If::execute() {
   Value_ptr rv = 0;
   
-  if (is_true(condition->execute()))
+  if (is_true(value(condition->execute())))
     rv = true_part->execute();
   else if (false_part)
     rv = false_part->execute();
@@ -118,12 +119,39 @@ Value_ptr Repeat::execute() {
   return rv;
 }
 
+Value_ptr For::execute() {
+  Value_ptr rv = 0;
+  Value_ptr var = variable->execute();
+  Value_ptr cond = value(range->execute()); // This should be a List or Slice
+  if (typeid(*cond.get()) == typeid(List)) {
+    list_ptr lst = ((List *)cond.get())->data();
+    std::slice slc = ((List *)cond.get())->index();
+    int n = slc.size();
+    for (int i = slc.start(); n--; i += slc.stride()) {
+      assign(var.get(), (*lst.get())[i]);
+      body->execute();
+    }
+  }
+  else if (typeid(*cond.get()) == typeid(Slice)) {
+    // don't use std::slice because size_t is unsigned!!!
+    int start = ((Slice *)cond.get())->start();
+    int size = ((Slice *)cond.get())->size();
+    int stride = ((Slice *)cond.get())->stride();
+    // ranges in for statements are different then ranges in indexes!
+    for (int i = start; stride < 0 ? i >= size : i <= size; i += stride) {
+      assign(var.get(), Value_ptr(new Real(i)));
+      body->execute();
+    }
+  }
+  else
+    mpl_error("illegal for statement");
+  return rv;
+}
+
 Value_ptr Return::execute() {
-  Value_ptr x = expr->execute();
-  x = value(x); // do I need a value here?
-  if (x == 0)
-    mpl_error("return statements must return a value");
-  return x;
+  if (expr)
+    return value(expr->execute());
+  return Value_ptr(new Null());
 }
 
 void push_value(Value_ptr x) {

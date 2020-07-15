@@ -310,7 +310,7 @@ void need(std::string const &s) {
     next_token();
   else {
     if (tokens->front())
-      std::cout << "syntax error: " << s << " expected near" << *tokens->front() << std::endl;
+      std::cout << "syntax error: " << s << " expected near " << *tokens->front() << std::endl;
     else
       std::cout << "syntax error: " << s << " expected" << std::endl;
     exit(1);
@@ -596,6 +596,22 @@ Code *repeat_statement() {
   return new Repeat(cond, body);
 }
 
+// for var in range
+// for var in set
+
+Code *for_statement() {
+  if (!is_identifier())
+    mpl_error("syntax error in for statement");
+  Code *x = new Variable(identifier()); // no subscripts allowed!
+  need("in");
+  Code *y = range();
+  line_end();
+  Code *z = statements();
+  need("end");
+  line_end();
+  return new For(x, y, z);
+}
+
 Code *return_statement() {
   if (tokens->empty())
     return new Return(0);
@@ -611,6 +627,8 @@ Code *statement() {
     return while_statement();
   if (match("repeat"))
     return repeat_statement();
+  if (match("for"))
+    return for_statement();
   return print_or_assign();
 }
 
@@ -697,6 +715,8 @@ void command_loop() {
 void initialize_builtin_functions() {
   function_table["matvec"] = new Builtin_Function(1, mpl_matvec);
 
+  function_table["gfmt"] = new Builtin_Function(1, mpl_gfmt);
+  
   function_table["exit"] = new Builtin_Function(1, mpl_exit);
   function_table["list"] = new Builtin_Function(1, mpl_list);
   function_table["vector"] = new Builtin_Function(1, mpl_vector);

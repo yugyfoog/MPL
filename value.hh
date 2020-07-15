@@ -22,6 +22,15 @@ class CMatrix;
 class String;
 class List;
 
+// Null is used for functions that don't return a value
+
+class Null : public Value {
+public:
+  Null() { }
+  ~Null() { }
+  std::string print() const { return "null"; }
+};
+
 class Real : public Value {
 private:
   double_ptr base;
@@ -120,7 +129,6 @@ public:
   string_ptr data() { return base; }
   std::slice index() { return i; }
 };
-
 
 class List : public Value {
 private:

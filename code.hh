@@ -72,6 +72,17 @@ public:
   Value_ptr execute();
 };
 
+class For : public Code {
+private:
+  Code *variable;
+  Code *range;
+  Code *body;
+public:
+  For(Code *v, Code *r, Code *b) : variable(v), range(r), body(b) { }
+  ~For() { delete variable; delete range; delete body; }
+  Value_ptr execute();
+};
+
 class Parameter : public Code {
 private:
   Code *param;
