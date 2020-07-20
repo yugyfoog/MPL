@@ -403,11 +403,6 @@ function test_matrix_index()
 
     ~ matrix index
 
-
-    ~ 1 2 3
-    ~ 4 5 6
-    ~ 7 8 9
-
     a = [1,2,3|4,5,6|7,8,9]
     test(6, a[1,2], "matrix[i,i]")
     test([5,6], a[1,1:2], "matrix[i,i:i]")
@@ -419,6 +414,24 @@ function test_matrix_index()
     test([2,3|8,9], a[0:2:2,1:2], "matrix[i:i:i,i:i]")
     test([1,3|7,9], a[0:2:2,0:2:2], "matrix[i:i:i,i:i:i]")
 
+    a[1,2] = 60
+    test([1,2,3|4,5,60|7,8,9], a, "matrix[i,i] = real")
+    a[1,1:2] = [55,66]
+    test([1,2,3|4,55,66|7,8,9], a, "matrix[i,i:i] = vector")
+    a[1,0:2:2] = [400,600]
+    test([1,2,3|400,55,600|7,8,9], a, "matrix[i,i:i:i] = vector")
+    a[1:2,1] = [50,80]
+    test([1,2,3|400,50,600|7,80,9], a, "matrix[i:i,i] = vector")
+    a[1:2,1:2] = [555,666|888,999]
+    test([1,2,3|400,555,666|7,888,999], a, "matrix[i:i,i:i] = matrix")
+    a[1:2,0:2:2] = [404,606|707,909]
+    test([1,2,3|404,555,606|707,888,909], a, "matrix[i:i,i:i:i] = matrix")
+    a[0:2:2,1] = [20,80]
+    test([1,20,3|404,555,606|707,80,909], a, "matrix[i:i:i,i] = vector")
+    a[0:2:2,1:2] = [22,33|88,99]
+    test([1,22,33|404,555,606|707,88,99], a, "matrix[i:i:i,i:i] = matrix")
+    a[0:2:2,0:2:2] = [10,30|70,90]
+    test([10,22,30|404,555,606|70,88,90], a, "matrix[i:i:i,i:i:i] = matrix")
 end
 
 function test_string_index()

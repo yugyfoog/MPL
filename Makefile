@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -g
+CXXFLAGS = -Wall -Wextra -g
 
 OBJS = mpl.o value.o code.o math.o function.o
 
