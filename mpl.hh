@@ -1,7 +1,3 @@
-#define XXX() x_undefined(__FILE__,__LINE__,__FUNCTION__)
-
-void x_undefined(char const *, int, char const *);
-
 extern bool in_function;
 
 extern int locals;

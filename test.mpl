@@ -31,15 +31,15 @@ end
 function test_addition()
     a = { 5, 1, (2,3), (1,2), [1,2,3], [1,2], [(1,2),(3,4)], \
           [(1,2),(3,4)], \
-	  [1,2|3,4], "abc" }
+	  [1,2|3,4], [1,2|3,4], "abc" }
     b = { 3, (2,3), 1, (3,4), [4,5,6], [(1,2),(3,4)], [1,2], [(5,6),(7,8)], \
-          [5,6|7,8], "def" }
+          [5,6|7,8], [(1,2),(3,4)|(5,6),(7,8)], "def" }
     q = { 8, (3,3), (3,3), (4,6), [5,7,9], [(2,2),(5,4)], [(2,2),(5,4)], [(6,8),(10,12)], \
-          [6,8|10,12], "abcdef" }
+          [6,8|10,12], [(2,2),(5,4)|(8,6),(11,8)], "abcdef" }
     s = { "real + real", "real + complex", "complex + real", \
           "complex + complex", "vector + vector", "vector + cvector", \
 	  "cvector + vector", "cvector + cvector", \
-	  "matrix + matrix", "string + string" }
+	  "matrix + matrix", "matrix + cmatrix", "string + string" }
     c = a + b
     i = 0
     while i < size(a)

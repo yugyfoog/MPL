@@ -90,6 +90,19 @@ void characterize(List *lst, Character *chr) {
   }
 }
 
+Value_ptr mpl_stor() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) != typeid(String))
+    mpl_error("string type required");
+  std::valarray<char> a(((String *)x)->index().size());
+  a[std::slice(0, ((String *)x)->index().size(), 1)] = (*((String *)x)->data().get())[((String *)x)->index()];
+  std::string s(&a[0], a.size());
+  std::istringstream i(s);
+  double y;
+  i >> y;
+  return Value_ptr(new Real(y));
+}
+
 Value_ptr mpl_gfmt() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) != typeid(Real))

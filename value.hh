@@ -110,6 +110,7 @@ private:
   std::gslice indx;
 public:
   CMatrix(List *, int, int);
+  CMatrix(complex_ptr b, std::gslice const &i) : base(b), indx(i) { }
   ~CMatrix() { }
   std::string print() const;
   complex_ptr data() { return base; }

@@ -27,6 +27,7 @@ public:
   Value_ptr execute(int);
 };
 
+Value_ptr mpl_stor();
 Value_ptr mpl_gfmt();
 
 Value_ptr mpl_matvec();

@@ -176,12 +176,60 @@ std::string Matrix::print() const {
 }
 
 CMatrix::CMatrix(List *l, int r, int c) {
-  XXX();
+  base = complex_ptr(new std::valarray<std::complex<double>>(r*c));
+  std::size_t lengths[] = {(size_t)c, (size_t)r};
+  std::size_t strides[] = {1, (size_t)c};
+  indx = std::gslice(0, std::valarray<std::size_t>(lengths,2),
+		     std::valarray<std::size_t>(strides, 2));
+  auto u = l->data();
+  int ii = l->index().start();
+  int k = 0;
+  for (int i = 0; i < r; i++) {
+    auto v = (List *)((*u.get()))[ii].get();
+    int jj = v->index().start();
+    int j = 0;
+    for (; j < (int)v->index().size(); j++) {
+      Value *vv = (*v->data())[jj].get();
+      if (typeid(*vv) == typeid(Real))
+	(*base)[k++] = ((Real *)vv)->value();
+      else
+	(*base)[k++] = ((Complex *)vv)->value();
+      jj += v->index().stride();
+    }
+    for (; j < c; j++)
+      (*base)[k++] = 0.0;
+    ii += l->index().stride();
+  }
 }
 
 std::string CMatrix::print() const {
-  XXX();
-  return 0;
+  std::ostringstream s;
+  std::valarray<std::complex<double>> *p = base.get();
+  s << "[";
+  int m = indx.size()[1] - 1;
+  int i = indx.start();
+  int n = indx.size()[0] - 1;
+  int j = i;
+  s << (*p)[j];
+  j += indx.stride()[0];
+  while (n--) {
+    s << ", " << (*p)[j];
+    j += indx.stride()[0];
+  }
+  i += indx.stride()[1];
+  while (m--) {
+    n = indx.size()[0] - 1;
+    j = i;
+    s << " | " << (*p)[j];
+    j += indx.stride()[0];
+    while (n--) {
+      s << ", " << (*p)[j];
+      j += indx.stride()[0];
+    }
+    i += indx.stride()[1];
+  }
+  s << "]";
+  return s.str();
 }
 
 String::String(std::string const &s) {
@@ -252,7 +300,7 @@ void List::add_to_front(Value_ptr x) {
 // is this function ever called?
 
 std::string List_Member::print() const {
-  XXX();
+  mpl_error("internal error");
   return 0;
 }
 

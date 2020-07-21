@@ -715,6 +715,7 @@ void command_loop() {
 void initialize_builtin_functions() {
   function_table["matvec"] = new Builtin_Function(1, mpl_matvec);
 
+  function_table["stor"] = new Builtin_Function(1, mpl_stor);
   function_table["gfmt"] = new Builtin_Function(1, mpl_gfmt);
   
   function_table["exit"] = new Builtin_Function(1, mpl_exit);
@@ -778,9 +779,4 @@ int main(int argc, char **argv) {
     }
   }
   return 0;
-}
-  
-void x_undefined(char const *file, int line, char const *func) {
-  std::cerr << func << "() undefined in " << file << " at line " << line << std::endl;
-  exit(1);
 }
