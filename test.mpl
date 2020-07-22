@@ -31,15 +31,19 @@ end
 function test_addition()
     a = { 5, 1, (2,3), (1,2), [1,2,3], [1,2], [(1,2),(3,4)], \
           [(1,2),(3,4)], \
-	  [1,2|3,4], [1,2|3,4], "abc" }
+	  [1,2|3,4], [1,2|3,4], [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(1,2),(3,4)|(5,6),(7,8)], "abc" }
     b = { 3, (2,3), 1, (3,4), [4,5,6], [(1,2),(3,4)], [1,2], [(5,6),(7,8)], \
-          [5,6|7,8], [(1,2),(3,4)|(5,6),(7,8)], "def" }
+          [5,6|7,8], [(1,2),(3,4)|(5,6),(7,8)], [1,2|3,4], \
+	  [(8,7),(6,5)|(4,3),(2,1)], "def" }
     q = { 8, (3,3), (3,3), (4,6), [5,7,9], [(2,2),(5,4)], [(2,2),(5,4)], [(6,8),(10,12)], \
-          [6,8|10,12], [(2,2),(5,4)|(8,6),(11,8)], "abcdef" }
+          [6,8|10,12], [(2,2),(5,4)|(8,6),(11,8)], [(2,2),(5,4)|(8,6),(11,8)], \
+	  [(9,9),(9,9)|(9,9),(9,9)], "abcdef" }
     s = { "real + real", "real + complex", "complex + real", \
           "complex + complex", "vector + vector", "vector + cvector", \
 	  "cvector + vector", "cvector + cvector", \
-	  "matrix + matrix", "matrix + cmatrix", "string + string" }
+	  "matrix + matrix", "matrix + cmatrix", "cmatrix + matrix", \
+	  "cmatrix + cmatrix", "string + string" }
     c = a + b
     i = 0
     while i < size(a)
@@ -50,16 +54,20 @@ end
 
 function test_subtraction()
     a = { 5, 1, (2,3), (1,2), [4,5,6], [1,2], [(1,2),(3,4)], [(1,2),(3,4)], \
-          [5,6|7,8], "abc" }
+          [5,6|7,8], [1,2|3,4], [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(8,7),(6,5)|(4,3),(2,1)], "abc" }
     b = { 3, (2,3), 1, (3,4), [1,2,3], [(1,2),(3,4)], [1,2], [(5,6),(7,8)], \
-          [1,2|3,4], "def" }
+          [1,2|3,4], [(1,2),(3,4)|(5,6),(7,8)], [1,2|3,4], \
+	  [(1,2),(3,4)|(5,6),(7,8)], "def" }
     x = { 2, (-1,-3), (1,3), (-2,-2), [3,3,3], [(0,-2),(-1,-4)], \
           [(0,2),(1,4)], [(-4,-4),(-4,-4)], \
-	  [4,4|4,4], "abcfed" }
+	  [4,4|4,4], [(0,-2),(-1,-4)|(-2,-6),(-3,-8)], \
+	  [(0,2),(1,4)|(2,6),(3,8)], [(7,5),(3,1)|(-1,-3),(-5,-7)], "abcfed" }
     s = { "real - real", "real - complex", "complex - real", \
           "complex - complex", "vector - vector", "vector - cvector", \
 	  "cvector - vector", "cvector - cvector", \
-	  "matrix - matrix", "string - string" }
+	  "matrix - matrix", "matrix - cmatrix", "cmatrix - matrix", \
+	  "cmatrix - cmatrix", "string - string" }
     c = a - b
     i = 0
     while i < size(a)
@@ -69,27 +77,37 @@ function test_subtraction()
 end
 
 ~ real * matrix ***
+~ complex * matrix ***
+~ real * cmatrix ***
+~ complex * cmatrix ***
+
 ~ matrix * real ***
-~ matrix * vector ***
-~ matrix * matrix ***
-
-~ complex * matrix
+~ matrix * complex ***
 ~ cmatrix * real
-~ cmatrix * vector
-~ cmatrix * matrix
-
-~ real * cmatrix
-~ matrix * complex
-~ matrix * cvector
-~ matrix * cmatrix
-
-~ complex * cmatrix
 ~ cmatrix * complex
+
+
+~ matrix * vector ***
+~ cmatrix * vector
+~ matrix * cvector
 ~ cmatrix * cvector
+
+~ matrix * matrix ***
+~ cmatrix * matrix
+~ matrix * cmatrix
 ~ cmatrix * cmatrix
 
-~ [ 1 2  [1 3  = [ 5 11
-~   3 4 ] 2 4]     11 25 ]
+
+~ [(1,2),(3,4)
+~  (5,6),(7,8)]
+
+~ [ 1, 2 ]
+
+
+~ [(7,10), (19,22)]
+
+
+
 
 function test_multiplication()
     a = { 5,                  2,                  (2,3),            (1,2), \
@@ -98,7 +116,8 @@ function test_multiplication()
 	  [(1,2),(3,4)],      [1,2],              [(1,2),(3,4)], \
 	  [1,2],              [(1,2),(3,4)],      [(1,2),(3,4)], \
 	  2,                  [1,2|3,4],          [1,2|3,4], \
-	  [1,2|3,4], \
+	  [1,2|3,4],          (1,2),              2, \
+	  (1,2),              [1,2|3,4],          [(1,2),(3,4)|(5,6),(7,8)], \
 	  2,                  "abc" }
 	  
     b = { 3,                  (2,3),              2,                (3,4), \
@@ -107,7 +126,8 @@ function test_multiplication()
 	  2,                  (1,2),              (1,2), \
 	  [(1,2),(3,4)],      [1,2],              [(4,3),(2,1)], \
 	  [1,2|3,4],          2,                  [1,2], \
-	  [1,3|2,4], \
+	  [1,3|2,4],          [1,2|3,4],          [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(1,2),(3,4)|(5,6),(7,8)], (1,2),       [1,2], \
 	  "abc",              2 }
 	  
     q = { 15,                 (4,6),              (4,6),            (-5,10), \
@@ -116,7 +136,8 @@ function test_multiplication()
 	  [(2,4),(6,8)],      [(1,2),(2,4)],      [(-3,4),(-5,10)], \
 	  (7,-10),            (7,10),             (20,10), \
 	  [2,4|6,8],          [2,4|6,8],          [5,11], \
-	  [5,11|11,25], \
+	  [5,11|11,25],       [(1,2),(2,4)|(3,6),(4,8)], [(2,4),(6,8)|(10,12),(14,16)], \
+	  [(-3,4),(-5,10)|(-7,16),(-9,22)], [(1,2),(2,4)|(3,6),(4,8)], [(7,10),(19,22)], \
 	  "abcabc",           "abcabc" }
 	  
     s = { "real * real",      "real * complex",   "complex * real", "complex * complex", \
@@ -125,7 +146,8 @@ function test_multiplication()
 	  "cvector * real",   "vector * complex", "cvector * complex", \
 	  "vector * cvector", "cvector * vector", "cvector * cvector", \
 	  "real * matrix",    "matrix * real",    "matrix * vector", \
-	  "matrix * matrix", \
+	  "matrix * matrix",  "complex * matrix", "real * cmatrix", \
+	  "complex * cmatrix", "matrix * complex", "matrix * complex", \
 	  "real * string",    "string * real" }
     c = a*b
     i = 0
