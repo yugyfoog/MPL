@@ -3,8 +3,7 @@ function compare(a, b)
         if size(a) != size(b) then
 	    return 0
 	end
-	i = 0
-	while i < size(a)
+	for i in 0:size(a)-1
 	    if compare(a[i], b[i]) == 0 then
 	        return 0
 	    end
@@ -45,8 +44,7 @@ function test_addition()
 	  "matrix + matrix", "matrix + cmatrix", "cmatrix + matrix", \
 	  "cmatrix + cmatrix", "string + string" }
     c = a + b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1   
         test(q[i], c[i], s[i])
         i = i + 1
     end
@@ -69,45 +67,11 @@ function test_subtraction()
 	  "matrix - matrix", "matrix - cmatrix", "cmatrix - matrix", \
 	  "cmatrix - cmatrix", "string - string" }
     c = a - b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(x[i], c[i], s[i])
         i = i + 1
     end
 end
-
-~ real * matrix ***
-~ complex * matrix ***
-~ real * cmatrix ***
-~ complex * cmatrix ***
-
-~ matrix * real ***
-~ matrix * complex ***
-~ cmatrix * real
-~ cmatrix * complex
-
-
-~ matrix * vector ***
-~ cmatrix * vector
-~ matrix * cvector
-~ cmatrix * cvector
-
-~ matrix * matrix ***
-~ cmatrix * matrix
-~ matrix * cmatrix
-~ cmatrix * cmatrix
-
-
-~ [(1,2),(3,4)
-~  (5,6),(7,8)]
-
-~ [ 1, 2 ]
-
-
-~ [(7,10), (19,22)]
-
-
-
 
 function test_multiplication()
     a = { 5,                  2,                  (2,3),            (1,2), \
@@ -118,6 +82,10 @@ function test_multiplication()
 	  2,                  [1,2|3,4],          [1,2|3,4], \
 	  [1,2|3,4],          (1,2),              2, \
 	  (1,2),              [1,2|3,4],          [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(1,2),(3,4)|(5,6),(7,8)],              [(1,2),(3,4)|(5,6),(7,8)], \
+	  [1,2|3,4],          [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(1,2),(3,4)|(5,6),(7,8)],              [1,2|3,4], \
+	  [(1,2),(3,4)|(5,6),(7,8)], \
 	  2,                  "abc" }
 	  
     b = { 3,                  (2,3),              2,                (3,4), \
@@ -128,6 +96,10 @@ function test_multiplication()
 	  [1,2|3,4],          2,                  [1,2], \
 	  [1,3|2,4],          [1,2|3,4],          [(1,2),(3,4)|(5,6),(7,8)], \
 	  [(1,2),(3,4)|(5,6),(7,8)], (1,2),       [1,2], \
+	  2,                  (1,2), \
+	  [(1,2),(3,4)],      [(1,2),(3,4)], \
+	  [1,2|3,4],          [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(8,7),(6,5)|(4,3),(2,1)], \
 	  "abc",              2 }
 	  
     q = { 15,                 (4,6),              (4,6),            (-5,10), \
@@ -138,6 +110,10 @@ function test_multiplication()
 	  [2,4|6,8],          [2,4|6,8],          [5,11], \
 	  [5,11|11,25],       [(1,2),(2,4)|(3,6),(4,8)], [(2,4),(6,8)|(10,12),(14,16)], \
 	  [(-3,4),(-5,10)|(-7,16),(-9,22)], [(1,2),(2,4)|(3,6),(4,8)], [(7,10),(19,22)], \
+	  [(2,4),(6,8)|(10,12),(14,16)], [(-3,4),(-5,10)|(-7,16),(-9,22)], \
+	  [(7,10),(15,22)],   [(-10,28),(-18,68)], \
+	  [(10,14),(14,20)|(26,30),(38,44)], [(11,14),(17,20)|(23,30),(37,44)], \
+	  [(-6,48),(-2,28)|(2,136),(6,84)], \
 	  "abcabc",           "abcabc" }
 	  
     s = { "real * real",      "real * complex",   "complex * real", "complex * complex", \
@@ -148,10 +124,13 @@ function test_multiplication()
 	  "real * matrix",    "matrix * real",    "matrix * vector", \
 	  "matrix * matrix",  "complex * matrix", "real * cmatrix", \
 	  "complex * cmatrix", "matrix * complex", "matrix * complex", \
+	  "cmatrix * real",   "cmatrix * complex", \
+	  "matrix * cvector", "cmatrix * cvector", \
+	  "cmatrix * matrix", "matrix * cmatrix", \
+	  "cmatrix * cmatrix", \
 	  "real * string",    "string * real" }
     c = a*b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
         i = i + 1
     end
@@ -159,16 +138,20 @@ end
 
 function test_division()
     a = { 6, 13, (4,6), (-5,10), [2,4,6], [1,2], [(1,2),(3,4)], \
-          [(1,2),(3,4)], [2,4|6,8] }
-    b = { 2, (2,-3), 2, (3,4), 2, (1,2), 2, (1,2), 2 }
+          [(1,2),(3,4)], [2,4|6,8], [1,2|3,4], \
+	  [(1,2),(3,4)|(5,6),(7,8)], [(1,2),(3,4)|(5,6),(7,8)] }
+    b = { 2, (2,-3), 2, (3,4), 2, (1,2), 2, (1,2), 2, (1,2), 2, (1,2) }
     q = { 3, (2,3), (2,3), (1,2), [1,2,3], [(0.2,-0.4),(0.4,-0.8)], \
-          [(0.5,1),(1.5,2)], [(1,0),(2.2,-0.4)], [1,2|3,4] }
+          [(0.5,1),(1.5,2)], [(1,0),(2.2,-0.4)], [1,2|3,4], \
+	  [(0.2,-0.4),(0.4,-0.8)|(0.6,-1.2),(0.8,-1.6)], \
+	  [(0.5,1),(1.5,2)|(2.5,3),(3.5,4)], \
+	  [(1,0),(2.2,-0.4)|(3.4,-0.8),(4.6,-1.2)] }
     s = { "real / real", "real / complex", "complex / real", \
           "complex / complex", "vector / real", "vector / complex", \
-	  "cvector / real", "cvector / complex", "matrix / real" }
+	  "cvector / real", "cvector / complex", "matrix / real", \
+	  "matrix / complex", "cmatrix / real", "cmatrix / complex" }
     c = a/b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
         i = i + 1
     end
@@ -183,26 +166,27 @@ function test_modulo()
 end
 
 function test_exponent()
-    a = { 3 }
-    b = { 2, (2,-3), 2, (3,4), 2 }
-    q = { 9, (2,3), (2,3), (1,2), [1,2,3] }
+    a = { 3, 3, (3,0), (3,0) }
+    b = { 2, (2,0), 2, (2,0) }
+    q = { 9, (9,0), (9,0), (9.00000000000000177636,0) }
     s = { "real ^ real", "real ^ complex", "complex ^ real", \
-          "complex ^ complex", "vector ^ real" }
+          "complex ^ complex" }
     c = a^b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
         i = i + 1
     end
 end
 
 function test_negation()
-    a = {3, (1,2), [1,2,3], [(1,2),(3,4)], [1,2|3,4], "abc"}
-    q = {-3, (-1,-2), [-1,-2,-3], [(-1,-2),(-3,-4)], [-1,-2|-3,-4], "cba" }
-    s = { "- real", "- complex", "- vector", "- cvector", "- matrix", "- string" }
+    a = {3, (1,2), [1,2,3], [(1,2),(3,4)], [1,2|3,4], \
+         [(1,2),(3,4)|(5,6),(7,8)], "abc"}
+    q = {-3, (-1,-2), [-1,-2,-3], [(-1,-2),(-3,-4)], [-1,-2|-3,-4], \
+         [(-1,-2),(-3,-4)|(-5,-6),(-7,-8)], "cba" }
+    s = { "- real", "- complex", "- vector", "- cvector", "- matrix", \
+          "- cmatrix", "- string" }
     c = -a
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
 	i = i + 1
     end
@@ -224,8 +208,7 @@ function test_or()
     b = {1, 0, 1, 0}
     q = {1, 1, 1, 0}
     c = a or b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], "or")
 	i = i + 1
     end
@@ -236,8 +219,7 @@ function test_and()
     b = {1, 0, 1, 0}
     q = {1, 0, 0, 0}
     c = a and b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], "and")
 	i = i + 1
     end
@@ -247,8 +229,7 @@ function test_not()
     a = { 0, 1 }
     q = { 1, 0 }
     c = not a
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], "not")
 	i = i + 1
     end
@@ -262,16 +243,18 @@ end
 
 function test_eq()
     a = { 3, 1, (1,2), (1,2), [1,2,3], [1,2], [(1,0),(2,0)], \
-          [(1,2),(3,4)], [1,2|3,4], "abc" }
+          [(1,2),(3,4)], [1,2|3,4], [1,2|3,4], [(1,0),(2,0)|(3,0),(4,0)], \
+	  [(1,2),(3,4)|(5,6),(7,8)], "abc" }
     b = { 3, (2,3), 3, (3,4), [1,2,3], [(1,0),(2,0)], [1,2], \
-          [(1,2),(3,4)], [1,2|3,4], "def" }
-    q = { 1, 0, 0, 0, 1, 1, 1, 1, 1, 0 }
+          [(1,2),(3,4)], [1,2|3,4], [(1,0),(2,0)|(3,0),(4,0)], [1,2|3,4], \
+	  [(1,2),(3,4)|(5,6),(7,8)], "def" }
+    q = { 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0 }
     s = { "real == real", "real == complex", "complex == real", \
            "complex == complex", "vector == vector", "vector == cvector", \
-	   "cvector == vector", "cvector == cvector", "matrix == matrix", "string == string" }
+	   "cvector == vector", "cvector == cvector", "matrix == matrix", \
+	   "matrix == cmatrix", "cmatrix == matrix", "cmatrix == cmatrix", "string == string" }
     c = a == b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
 	i = i + 1
     end
@@ -279,17 +262,18 @@ end
 
 function test_ne()
     a = { 3, 1, (1,2), (1,2), [1,2,3], [1,2], [(1,0),(2,0)], \
-          [(1,2),(3,4)], [1,2|3,4], "abc" }
+          [(1,2),(3,4)], [1,2|3,4], [1,2|3,4], [(1,0),(2,0)|(3,0),(4,0)], \
+	  [(1,2),(3,4)|(5,6),(7,8)], "abc" }
     b = { 3, (2,3), 3, (3,4), [1,2,3], [(1,0),(2,0)], [1,2], \
-          [(1,2),(3,4)], [1,2|3,4], "def" }
-    q = { 0, 1, 1, 1, 0, 0, 0, 0, 0, 1 }
+          [(1,2),(3,4)], [1,2|3,4], [(1,0),(2,0)|(3,0),(4,0)], [1,2|3,4], \
+	  [(1,2),(3,4)|(5,6),(7,8)], "def" }
+    q = { 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1 }
     s = { "real != real", "real != complex", "complex != real", \
            "complex != complex", "vector != vector", "vector != cvector", \
 	   "cvector != vector", "cvector != cvector", "matrix != matrix", \
-	   "string != string" }
+	   "matrix == cmatrix", "cmatrix == matrix", "cmatrix == cmatrix", "string != string" }
     c = a != b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
 	i = i + 1
     end
@@ -301,8 +285,7 @@ function test_lt()
     q = { 0, 1 }
     s = { "real < real", "string < string" }
     c = a < b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
 	i = i + 1
     end
@@ -314,8 +297,7 @@ function test_le()
     q = { 1, 1 }
     s = { "real <= real", "string <= string" }
     c = a <= b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
 	i = i + 1
     end
@@ -327,8 +309,7 @@ function test_gt()
     q = { 0, 0 }
     s = { "real > real", "string > string" }
     c = a > b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
 	i = i + 1
     end
@@ -340,8 +321,7 @@ function test_ge()
     q = { 1, 0 }
     s = { "real >= real", "string >= string" }
     c = a >= b
-    i = 0
-    while i < size(a)
+    for i in 0:size(a)-1
         test(q[i], c[i], s[i])
 	i = i + 1
     end

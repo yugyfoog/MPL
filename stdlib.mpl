@@ -59,6 +59,21 @@ function islist(x)
     return type(x) == LIST_TYPE
 end
 
+function left(s, n)
+    return s + (n-size(s))*" "
+end
+
+function right(s, n)
+    return (n-size(s))*" " + s
+end
+
+function center(s, n)
+    d = n - size(s)
+    l = d/2
+    r = d-l
+    return l*" " + s + r*" "
+end
+
 function cis(x)
     return (cos(x), sin(x))
 end
