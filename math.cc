@@ -1842,6 +1842,12 @@ Vector *row_index(Matrix *a, Real *i) {
   return new Vector(a->data(), std::slice(ai.start() + r*ai.stride()[1], ai.size()[0], ai.stride()[0]));
 }
 
+CVector *row_index(CMatrix *a, Real *i) {
+  int r = round(i->value());
+  std::gslice ai = a->index();
+  return new CVector(a->data(), std::slice(ai.start() + r*ai.stride()[1], ai.size()[0], ai.stride()[0]));
+}
+
 Matrix *row_index(Matrix *a, Slice *i) {
   std::slice r = i->slice();
   std::gslice ai = a->index();
@@ -1852,12 +1858,28 @@ Matrix *row_index(Matrix *a, Slice *i) {
 					   std::valarray<std::size_t>(strides,2)));
 }  
 
+CMatrix *row_index(CMatrix *a, Slice *i) {
+  std::slice r = i->slice();
+  std::gslice ai = a->index();
+  std::size_t lengths[] { ai.size()[1], r.size() };
+  std::size_t strides[] { ai.stride()[0], r.stride()*ai.stride()[1] };
+  return new CMatrix(a->data(), std::gslice(ai.start() + i->start()*ai.stride()[1],
+					   std::valarray<std::size_t>(lengths,2),
+					   std::valarray<std::size_t>(strides,2)));
+}
+
 Value_ptr row_index(Value *a, Value *i) {
   if (typeid(*a) == typeid(Matrix)) {
     if (typeid(*i) == typeid(Real))
       return Value_ptr(row_index((Matrix *)a, (Real *)i));
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(row_index((Matrix *)a, (Slice *)i));
+  }
+  if (typeid(*a) == typeid(CMatrix)) {
+    if (typeid(*i) == typeid(Real))
+      return Value_ptr(row_index((CMatrix *)a, (Real *)i));
+    if (typeid(*i) == typeid(Slice))
+      return Value_ptr(row_index((CMatrix *)a, (Slice *)i));
   }
   std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
   mpl_error("illegal index 1");
@@ -1876,6 +1898,22 @@ Matrix *column_index(Matrix *a, Slice *i) {
   std::size_t lengths[] { c.size(), ai.size()[1] };
   std::size_t strides[] { c.stride()*ai.stride()[0], ai.stride()[1] };
   return new Matrix(a->data(), std::gslice(ai.start() + i->start()*ai.stride()[0],
+					   std::valarray<std::size_t>(lengths,2),
+					   std::valarray<std::size_t>(strides,2)));
+}  
+
+CVector *column_index(CMatrix *a, Real *i) {
+  int c = round(i->value());
+  std::gslice ai = a->index();
+  return new CVector(a->data(), std::slice(ai.start() + c*ai.stride()[0], ai.size()[1], ai.stride()[1]));
+}
+
+CMatrix *column_index(CMatrix *a, Slice *i) {
+  std::slice c = i->slice();
+  std::gslice ai = a->index();
+  std::size_t lengths[] { c.size(), ai.size()[1] };
+  std::size_t strides[] { c.stride()*ai.stride()[0], ai.stride()[1] };
+  return new CMatrix(a->data(), std::gslice(ai.start() + i->start()*ai.stride()[0],
 					   std::valarray<std::size_t>(lengths,2),
 					   std::valarray<std::size_t>(strides,2)));
 }  
@@ -1899,11 +1937,16 @@ Value_ptr column_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(column_index((Matrix *)a, (Slice *)i));
   }
+  else if (typeid(*a) == typeid(CMatrix)) {
+    if (typeid(*i) == typeid(Real))
+      return Value_ptr(column_index((CMatrix *)a, (Real *)i));
+    if (typeid(*i) == typeid(Slice))
+      return Value_ptr(column_index((CMatrix *)a, (Slice *)i));
+  }
   std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
   mpl_error("illegal index 2");
   return 0;
 }
-  
 
 Real *simple_index(Vector *a, Real *i) {
   int n = round(i->value());
@@ -1970,6 +2013,12 @@ Value_ptr simple_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(row_index((Matrix *)a, (Slice *)i));
   }
+  else if (typeid(*a) == typeid(CMatrix)) {
+    if (typeid(*i) == typeid(Real))
+      return Value_ptr(row_index((CMatrix *)a, (Real *)i));
+    if (typeid(*i) == typeid(Slice))
+      return Value_ptr(row_index((CMatrix *)a, (Slice *)i));
+  }
   else if (typeid(*a) == typeid(String)) {
     if (typeid(*i) == typeid(Real))
       return Value_ptr(simple_index((String *)a, (Real *)i));
@@ -2010,6 +2059,13 @@ void assign(CVector *u, CVector *v) {
 }
 
 void assign(Matrix *u, Matrix *v) {
+  if (u->index().size()[0] != v->index().size()[0]
+      || u->index().size()[1] != v->index().size()[1])
+    mpl_error("matrix size mismatch");
+  (*u->data().get())[u->index()] = (*v->data().get())[v->index()];
+}
+
+void assign(CMatrix *u, CMatrix *v) {
   if (u->index().size()[0] != v->index().size()[0]
       || u->index().size()[1] != v->index().size()[1])
     mpl_error("matrix size mismatch");
@@ -2065,6 +2121,8 @@ void assign(Value *u, Value_ptr v) {
       assign((CVector *)u, (CVector *)v.get());
     else if (typeid(*u) == typeid(Matrix) && typeid(*v) == typeid(Matrix))
       assign((Matrix *)u, (Matrix *)v.get());
+    else if (typeid(*u) == typeid(CMatrix) && typeid(*v) == typeid(CMatrix))
+      assign((CMatrix *)u, (CMatrix *)v.get());
     else if (typeid(*u) == typeid(String) && typeid(*v) == typeid(String))
       assign((String *)u, (String *)v.get());
     else if (typeid(*u) == typeid(List) && typeid(*v) == typeid(List))
