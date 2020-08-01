@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <list>
 #include <map>
 #include <stack>
@@ -112,6 +113,26 @@ Value_ptr mpl_gfmt() {
   return Value_ptr(new String(o.str()));
 }
 
+Value_ptr mpl_ffmt() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  Value *y = value(read_memory(frame_pointer+1)).get();
+  if (typeid(*x) != typeid(Real) || typeid(*y) != typeid(Real))
+    mpl_error("type error in ffmt");
+  std::ostringstream o;
+  o << std::fixed << std::setprecision(round(((Real *)y)->value())) << ((Real *)x)->value();
+  return Value_ptr(new String(o.str()));
+}
+
+Value_ptr mpl_sfmt() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  Value *y = value(read_memory(frame_pointer+1)).get();
+  if (typeid(*x) != typeid(Real) || typeid(*y) != typeid(Real))
+    mpl_error("type error in ffmt");
+  std::ostringstream o;
+  o << std::scientific << std::setprecision(round(((Real *)y)->value())) << ((Real *)x)->value();
+  return Value_ptr(new String(o.str()));
+}
+  
 Value_ptr mpl_matvec() {
   Character tst;
   
@@ -257,6 +278,39 @@ Value_ptr mpl_ascii() {
   }
   mpl_error("type error");
   return 0;
+}
+
+Value_ptr mpl_floor() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) == typeid(Real)) {
+    Real *u = (Real *)x;
+    return Value_ptr(new Real(floor(u->value())));
+  }
+  std::cout << typeid(*x).name() << std::endl;
+  std::cout << "type error" << std::endl;
+  exit(1);
+}
+
+Value_ptr mpl_ceil() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) == typeid(Real)) {
+    Real *u = (Real *)x;
+    return Value_ptr(new Real(ceil(u->value())));
+  }
+  std::cout << typeid(*x).name() << std::endl;
+  std::cout << "type error" << std::endl;
+  exit(1);
+}
+
+Value_ptr mpl_round() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) == typeid(Real)) {
+    Real *u = (Real *)x;
+    return Value_ptr(new Real(floor(u->value()+0.5)));
+  }
+  std::cout << typeid(*x).name() << std::endl;
+  std::cout << "type error" << std::endl;
+  exit(1);
 }
 
 Value_ptr mpl_real() {
@@ -616,6 +670,17 @@ Value_ptr mpl_gamma() {
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
     return Value_ptr(new Real(tgamma(u->value())));
+  }
+  std::cout << typeid(*x).name() << std::endl;
+  std::cout << "type error" << std::endl;
+  exit(1);
+}
+
+Value_ptr mpl_lgamma() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) == typeid(Real)) {
+    Real *u = (Real *)x;
+    return Value_ptr(new Real(lgamma(u->value())));
   }
   std::cout << typeid(*x).name() << std::endl;
   std::cout << "type error" << std::endl;

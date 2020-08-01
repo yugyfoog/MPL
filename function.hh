@@ -29,6 +29,8 @@ public:
 
 Value_ptr mpl_stor();
 Value_ptr mpl_gfmt();
+Value_ptr mpl_ffmt();
+Value_ptr mpl_sfmt();
 
 Value_ptr mpl_matvec();
 Value_ptr mpl_list();
@@ -40,6 +42,10 @@ Value_ptr mpl_read();
 Value_ptr mpl_eof();
 Value_ptr mpl_type();
 Value_ptr mpl_ascii();
+
+Value_ptr mpl_floor();
+Value_ptr mpl_ceil();
+Value_ptr mpl_round();
 Value_ptr mpl_real();
 Value_ptr mpl_imag();
 Value_ptr mpl_abs();
@@ -69,4 +75,4 @@ Value_ptr mpl_asinh();
 Value_ptr mpl_acosh();
 Value_ptr mpl_atanh();
 Value_ptr mpl_gamma();
-
+Value_ptr mpl_lgamma();

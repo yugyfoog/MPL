@@ -60,17 +60,26 @@ function islist(x)
 end
 
 function left(s, n)
+    if n <= size(s) then
+        return s
+    end
     return s + (n-size(s))*" "
 end
 
 function right(s, n)
+    if n <= size(s) then
+        return s
+    end
     return (n-size(s))*" " + s
 end
 
 function center(s, n)
+    if n <= size(s) then
+        return s
+    end
     d = n - size(s)
-    l = d/2
-    r = d-l
+    l = round(d/2)
+    r = d - l
     return l*" " + s + r*" "
 end
 

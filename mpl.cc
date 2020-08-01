@@ -717,6 +717,8 @@ void initialize_builtin_functions() {
 
   function_table["stor"] = new Builtin_Function(1, mpl_stor);
   function_table["gfmt"] = new Builtin_Function(1, mpl_gfmt);
+  function_table["ffmt"] = new Builtin_Function(2, mpl_ffmt);
+  function_table["sfmt"] = new Builtin_Function(2, mpl_sfmt);
   
   function_table["exit"] = new Builtin_Function(1, mpl_exit);
   function_table["list"] = new Builtin_Function(1, mpl_list);
@@ -727,6 +729,10 @@ void initialize_builtin_functions() {
   function_table["eof"] = new Builtin_Function(0, mpl_eof);
   function_table["type"] = new Builtin_Function(1, mpl_type);
   function_table["ascii"] = new Builtin_Function(1, mpl_ascii);
+
+  function_table["floor"] = new Builtin_Function(1, mpl_floor);
+  function_table["ceil"] = new Builtin_Function(1, mpl_ceil);
+  function_table["round"] = new Builtin_Function(1, mpl_round);
   function_table["real"] = new Builtin_Function(1, mpl_real);
   function_table["imag"] = new Builtin_Function(1, mpl_imag);
   function_table["abs"] = new Builtin_Function(1, mpl_abs);
@@ -758,6 +764,7 @@ void initialize_builtin_functions() {
   function_table["atanh"] = new Builtin_Function(1, mpl_atanh);
 
   function_table["gamma"] = new Builtin_Function(1, mpl_gamma);
+  function_table["lgamma"] = new Builtin_Function(1, mpl_lgamma);
 }
 
 int main(int argc, char **argv) {
