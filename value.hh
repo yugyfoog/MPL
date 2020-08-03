@@ -102,6 +102,8 @@ public:
   std::string print() const;
   double_ptr data() { return base; }
   std::gslice index() { return indx; }
+  std::gslice *rindex() { return &indx; }
+  void transpose();
 };
 
 class CMatrix : public Value {
@@ -115,6 +117,8 @@ public:
   std::string print() const;
   complex_ptr data() { return base; }
   std::gslice index() { return indx; }
+  std::gslice *rindex() { return &indx; }
+  void transpose();
 };
 
 class String : public Value {

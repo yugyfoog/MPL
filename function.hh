@@ -76,3 +76,5 @@ Value_ptr mpl_acosh();
 Value_ptr mpl_atanh();
 Value_ptr mpl_gamma();
 Value_ptr mpl_lgamma();
+
+Value_ptr mpl_tr();

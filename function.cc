@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <complex>
+#include <algorithm>
 #include <valarray>
 #include <memory>
 #include <typeinfo>
@@ -687,3 +688,13 @@ Value_ptr mpl_lgamma() {
   exit(1);
 }
 
+Value_ptr mpl_tr() {
+  Value_ptr x = value(read_memory(frame_pointer));
+  if (typeid(*x) == typeid(Matrix))
+    ((Matrix *)x.get())->transpose();
+  else if (typeid(*x) == typeid(CMatrix))
+    ((CMatrix *)x.get())->transpose();
+  else
+    mpl_error("type error in tr()");
+  return x;
+}

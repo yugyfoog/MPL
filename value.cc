@@ -4,6 +4,7 @@
 #include <map>
 #include <stack>
 #include <vector>
+#include <algorithm>
 #include <complex>
 #include <valarray>
 #include <memory>
@@ -140,6 +141,13 @@ Matrix::Matrix(List *l, int r, int c) {
   }
 }
 
+void Matrix::transpose() {
+  std::size_t lengths[2] { indx.size()[1], indx.size()[0] };
+  std::size_t strides[2] { indx.stride()[1], indx.stride()[0] };
+  indx = std::gslice(indx.start(), std::valarray<std::size_t>(lengths,2),
+		     std::valarray<std::size_t>(strides, 2));
+}
+
 std::string Matrix::print() const {
   std::ostringstream s;
 
@@ -200,6 +208,13 @@ CMatrix::CMatrix(List *l, int r, int c) {
       (*base)[k++] = 0.0;
     ii += l->index().stride();
   }
+}
+
+void CMatrix::transpose() {
+  std::size_t lengths[2] { indx.size()[1], indx.size()[0] };
+  std::size_t strides[2] { indx.stride()[1], indx.stride()[0] };
+  indx = std::gslice(indx.start(), std::valarray<std::size_t>(lengths,2),
+		     std::valarray<std::size_t>(strides, 2));
 }
 
 std::string CMatrix::print() const {

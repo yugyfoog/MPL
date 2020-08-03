@@ -765,6 +765,8 @@ void initialize_builtin_functions() {
 
   function_table["gamma"] = new Builtin_Function(1, mpl_gamma);
   function_table["lgamma"] = new Builtin_Function(1, mpl_lgamma);
+
+  function_table["tr"] = new Builtin_Function(1, mpl_tr);
 }
 
 int main(int argc, char **argv) {
