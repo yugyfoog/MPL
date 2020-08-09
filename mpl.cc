@@ -714,15 +714,16 @@ void command_loop() {
 
 void initialize_builtin_functions() {
   function_table["matvec"] = new Builtin_Function(1, mpl_matvec);
-
   function_table["stor"] = new Builtin_Function(1, mpl_stor);
   function_table["gfmt"] = new Builtin_Function(1, mpl_gfmt);
   function_table["ffmt"] = new Builtin_Function(2, mpl_ffmt);
   function_table["sfmt"] = new Builtin_Function(2, mpl_sfmt);
-  
   function_table["exit"] = new Builtin_Function(1, mpl_exit);
   function_table["list"] = new Builtin_Function(1, mpl_list);
   function_table["vector"] = new Builtin_Function(1, mpl_vector);
+  function_table["cvector"] = new Builtin_Function(1, mpl_cvector);
+  function_table["matrix"] = new Builtin_Function(2, mpl_matrix);
+  function_table["cmatrix"] = new Builtin_Function(2, mpl_cmatrix);
   function_table["size"] = new Builtin_Function(1, mpl_size);
   function_table["concat"] = new Builtin_Function(2, mpl_concat);
   function_table["read"] = new Builtin_Function(0, mpl_read);
@@ -771,7 +772,7 @@ void initialize_builtin_functions() {
 
 int main(int argc, char **argv) {
   initialize_builtin_functions();
-  file_stack.push(new std::ifstream("stdlib.mpl"));
+  file_stack.push(new std::ifstream("/usr/local/share/mpl/stdlib.mpl"));
   command_loop();
   if (argc == 1) {
     file_stack.push(&std::cin);

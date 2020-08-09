@@ -177,6 +177,41 @@ Value_ptr mpl_vector() {
   return 0;
 }
 
+Value_ptr mpl_cvector() {
+  Value_ptr x = value(read_memory(frame_pointer));
+  if (typeid(*x) == typeid(Real)) {
+    Real *xx = (Real *)x.get();
+    int n = round(xx->value());
+    return Value_ptr(new CVector(n));
+  }
+  mpl_error("type error in cvector()");
+  return 0;
+}
+
+Value_ptr mpl_matrix() {
+  Value_ptr r = value(read_memory(frame_pointer));
+  Value_ptr c = value(read_memory(frame_pointer+1));
+  if (typeid(*r) == typeid(Real) && typeid(*c) == typeid(Real)) {
+    int rr = round(((Real *)r.get())->value());
+    int cc = round(((Real *)c.get())->value());
+    return Value_ptr(new Matrix(rr, cc));
+  }
+  mpl_error("type error in matrix()");
+  return 0;
+}
+
+Value_ptr mpl_cmatrix() {
+  Value_ptr r = value(read_memory(frame_pointer));
+  Value_ptr c = value(read_memory(frame_pointer+1));
+  if (typeid(*r) == typeid(Real) && typeid(*c) == typeid(Real)) {
+    int rr = round(((Real *)r.get())->value());
+    int cc = round(((Real *)c.get())->value());
+    return Value_ptr(new CMatrix(rr, cc));
+  }
+  mpl_error("type error in cmatrix()");
+  return 0;
+}
+
 Value_ptr mpl_concat() {
   Value_ptr x = value(read_memory(frame_pointer));
   Value_ptr y = value(read_memory(frame_pointer+1));

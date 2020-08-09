@@ -83,6 +83,20 @@ function center(s, n)
     return l*" " + s + r*" "
 end
 
+function min(x, y)
+    if x <= y then
+        return x
+    end
+    return y
+end
+
+function max(x, y)
+    if x >= y then
+        return x
+    end
+    return y
+end
+
 function cis(x)
     return (cos(x), sin(x))
 end

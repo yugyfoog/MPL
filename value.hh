@@ -83,6 +83,7 @@ private:
   complex_ptr base;
   std::slice indx;
 public:
+  CVector(int);
   CVector(complex_ptr b, std::slice i) : base(b), indx(i) { }
   CVector(List *, int);
   ~CVector() { }
@@ -96,6 +97,7 @@ private:
   double_ptr base;
   std::gslice indx;
 public:
+  Matrix(int, int);
   Matrix(List *, int, int);
   Matrix(double_ptr b, std::gslice const &i) : base(b), indx(i) { }
   ~Matrix() { }
@@ -111,6 +113,7 @@ private:
   complex_ptr base;
   std::gslice indx;
 public:
+  CMatrix(int, int);
   CMatrix(List *, int, int);
   CMatrix(complex_ptr b, std::gslice const &i) : base(b), indx(i) { }
   ~CMatrix() { }

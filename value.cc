@@ -59,6 +59,11 @@ std::string Vector::print() const {
   return s.str();
 }
 
+CVector::CVector(int s) {
+  base = complex_ptr(new std::valarray<std::complex<double>>(s));
+  indx = std::slice(0, s, 1);
+}
+
 CVector::CVector(List *l, int n) {
   // l is a list of ONLY Real and Complex
   base = complex_ptr(new std::valarray<std::complex<double>>(n));
@@ -90,6 +95,14 @@ std::string CVector::print() const {
   return s.str();
 }
 
+Matrix::Matrix(int r, int c) {
+  base = double_ptr(new std::valarray<double>(r*c));
+  std::size_t lengths[] { (size_t)c, (size_t)r };
+  std::size_t strides[] { (size_t)r, 1 };
+  indx = std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+		     std::valarray<std::size_t>(strides, 2));
+}
+  
 
 /*
 
@@ -181,6 +194,14 @@ std::string Matrix::print() const {
   }
   s << "]";
   return s.str();
+}
+
+CMatrix::CMatrix(int r, int c) {
+  base = complex_ptr(new std::valarray<std::complex<double>>(r*c));
+  std::size_t lengths[] { (size_t)c, (size_t)r };
+  std::size_t strides[] { (size_t)r, 1 };
+  indx = std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+		     std::valarray<std::size_t>(strides, 2));
 }
 
 CMatrix::CMatrix(List *l, int r, int c) {
