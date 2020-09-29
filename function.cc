@@ -243,6 +243,15 @@ Value_ptr mpl_size() {
     return Value_ptr(new Real(1.0));
   if (typeid(*x) == typeid(Vector))
     return Value_ptr(new Real(((Vector *)x.get())->size()));
+  if (typeid(*x) == typeid(CVector))
+    return Value_ptr(new Real(((CVector *)x.get())->size()));
+
+  if (typeid(*x) == typeid(Matrix)) {
+    std::vector<Value_ptr> *lst = new std::vector<Value_ptr>(2);
+    (*lst)[0] = Value_ptr(new Real(((Matrix *)x.get())->rows()));
+    (*lst)[1] = Value_ptr(new Real(((Matrix *)x.get())->cols()));
+    return Value_ptr(new List(list_ptr(lst), std::slice(0, 2, 1)));
+  }
   
   // some more types go here
   

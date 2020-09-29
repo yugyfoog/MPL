@@ -9,7 +9,7 @@ function pascal(n)
     end
     line_width = (n+1)*field_width
     p = list(n+1)
-    for i in 0:n  ~ for each row
+    for i in 0:n
         p[i] = 1
 	for j in i-1:1:-1
 	    p[j] = p[j-1] + p[j]

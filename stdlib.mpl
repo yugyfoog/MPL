@@ -59,6 +59,16 @@ function islist(x)
     return type(x) == LIST_TYPE
 end
 
+function rows(m)
+    s = size(m)
+    return s[0]
+end
+
+function cols(m)
+    s = size(m)
+    return s[1]
+end
+
 function left(s, n)
     if n <= size(s) then
         return s

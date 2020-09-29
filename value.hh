@@ -90,6 +90,7 @@ public:
   std::string print() const;
   complex_ptr data() { return base; }
   std::slice index() { return indx; }
+  int size() { return indx.size(); }
 };
 
 class Matrix : public Value {
@@ -106,6 +107,8 @@ public:
   std::gslice index() { return indx; }
   std::gslice *rindex() { return &indx; }
   void transpose();
+  int rows() { return indx.size()[1]; }
+  int cols() { return indx.size()[0]; }
 };
 
 class CMatrix : public Value {
