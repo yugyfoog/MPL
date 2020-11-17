@@ -311,16 +311,12 @@ std::string List::print() const {
   if (i.size() > 0) {
     int index = i.start();
     int length = i.size();
-    if (index >= size) {
-      std::cout << "index out of range" << std::endl;
-      exit(1);
-    }
+    if (index >= size)
+      mpl_error("index out of range");
     s << p[index]->print();
     for (index += i.stride(), length--; length-- > 0; index += i.stride()) {
-      if (index >= size) {
-	std::cout << "index out of range" << std::endl;
-	exit(1);
-      }
+      if (index >= size)
+	mpl_error("index out of range");
       s << ", " << p[index]->print();
     }
   }

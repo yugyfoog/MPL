@@ -163,3 +163,14 @@ function acoth(x)
     return atanh(1/x)
 end
 
+function mag(x)
+    m = 0
+    for i in 0:length(x)
+        m = m + x[i]*x[i]
+    end
+    return sqrt(m)
+end
+
+function cross(x, y)
+    return [x[1]*y[2] - x[2]*y[1], x[2]*y[0] - x[0]*y[2], x[0]*y[1] - x[1]*y[0]]
+end

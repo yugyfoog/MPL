@@ -15,6 +15,8 @@
 #include "function.hh"
 #include "mpl.hh"
 
+const std::string stdlib = "/usr/local/share/mpl/stdlib.mpl";
+
 std::stack<std::istream *> file_stack;
 
 Token_List *tokens = 0;
@@ -772,7 +774,7 @@ void initialize_builtin_functions() {
 
 int main(int argc, char **argv) {
   initialize_builtin_functions();
-  file_stack.push(new std::ifstream("/usr/local/share/mpl/stdlib.mpl"));
+  file_stack.push(new std::ifstream(stdlib));
   command_loop();
   if (argc == 1) {
     file_stack.push(&std::cin);

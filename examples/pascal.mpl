@@ -21,3 +21,5 @@ function pascal(n)
 	center(s, line_width)	
     end
 end
+
+pascal(12)

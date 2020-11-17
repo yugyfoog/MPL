@@ -11,9 +11,9 @@ $(OBJS): mpl.hh value.hh code.hh math.hh function.hh
 
 
 mpl.pdf: mpl.tex
-	pdflatex -interaction batchmode mpl.tex
+	pdflatex -interaction nonstopmode -file-line-error mpl.tex
 
-install:
+install: mpl stdlib.mpl
 	cp mpl /usr/local/bin
 	cp stdlib.mpl /usr/local/share/mpl
 

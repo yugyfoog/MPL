@@ -1839,12 +1839,16 @@ std::slice compose(std::slice const &a, std::slice const &b) {
 Vector *row_index(Matrix *a, Real *i) {
   int r = round(i->value());
   std::gslice ai = a->index();
+  if (r < 0 || r >= (int)ai.size()[1])
+    mpl_error("index out of range");
   return new Vector(a->data(), std::slice(ai.start() + r*ai.stride()[1], ai.size()[0], ai.stride()[0]));
 }
 
 CVector *row_index(CMatrix *a, Real *i) {
   int r = round(i->value());
   std::gslice ai = a->index();
+  if (r < 0 || r >= (int)ai.size()[1])
+    mpl_error("index out of range");
   return new CVector(a->data(), std::slice(ai.start() + r*ai.stride()[1], ai.size()[0], ai.stride()[0]));
 }
 
@@ -1889,6 +1893,8 @@ Value_ptr row_index(Value *a, Value *i) {
 Vector *column_index(Matrix *a, Real *i) {
   int c = round(i->value());
   std::gslice ai = a->index();
+  if (c < 0 || c >= (int)ai.size()[0])
+    mpl_error("index out of range");
   return new Vector(a->data(), std::slice(ai.start() + c*ai.stride()[0], ai.size()[1], ai.stride()[1]));
 }
 
@@ -1905,6 +1911,8 @@ Matrix *column_index(Matrix *a, Slice *i) {
 CVector *column_index(CMatrix *a, Real *i) {
   int c = round(i->value());
   std::gslice ai = a->index();
+  if (c < 0 || c >= (int)ai.size()[0])
+    mpl_error("index out of range");
   return new CVector(a->data(), std::slice(ai.start() + c*ai.stride()[0], ai.size()[1], ai.stride()[1]));
 }
 
@@ -1972,7 +1980,7 @@ CVector *simple_index(CVector *a, Slice *i) {
 
 String *simple_index(String *a, Real *i) {
   int n = round(i->value());
-  if (n >= (int)a->index().size())
+  if (n < 0 || n >= (int)a->index().size())
     mpl_error("index out of range");
   std::slice s = a->index();
   string_ptr d = a->data();

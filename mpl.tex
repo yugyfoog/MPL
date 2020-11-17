@@ -13,6 +13,13 @@ The intent of this language is for writting small mathematical programs.
 Programs that are to small to need the facilities of a real programming
 language, yet too large for a handheld calculator.
 
+\emph{MPL} is meant to be a scripting lauguage.
+The ideal workflow is: find a problem, collect data for input,
+write a script in you favorite text editor, run your script,
+(maybe debug your script) find your solution.
+You could use the interpreter interactivaly, but it doesn't have
+any of the niceties of a user friendly interpreter.
+
 If you type a mathematical expression, \emph{MPL} will respond with
 the result.  For example,
 \begin{verbatim}
@@ -32,8 +39,8 @@ And then use that variable in expressions
 -1/phi
 \end{verbatim}
 
-You can also define functions. For example to compute the $n$th Fibonacci
-number define the function
+You can also define functions. For example, to compute the $n$th Fibonacci
+number, define the function:
 \begin{verbatim}
 function fibonacci(n)
     q = (1 + sqrt(5))/2
@@ -53,20 +60,34 @@ strings and lists.
 The vector and matrix types are \emph{not} general purpose arrays.
 The list type can be used as an array.
 
+\section{Running the Interpreter}
+A typical \emph{MPL} invocation is
+\begin{verbatim}
+mpl script <input >output
+\end{verbatim}
+If no script is given, \verb|mpl| will read code from standard input.
+More than one script can be listed on the command line, \verb|mpl| will then
+execute each script, in order, as though all the script were a single file.
+
 \section{Lexical}
 \emph{MPL} is a line oriented language.
 Each statement is on its own line.
 If a line is too long you can split it in to two lines by by ending
 the first line with a backslash, \verb|\|.
 Comments start with a tilde, \verb|~|, and continue to the end of the line.
-Backslashes and tildes are considered the same as a space so can only occur
+
+If a line is too long you can split it into multiple lines by
+ending each line, except the last, with a backslash, \verb|\|, character.
+Line continuations are considered the same as a space so can only occur
 where spaces are allowed.
+A string cannot span multiple lines, however you can use line contimuations
+and the string concatenation operator, \verb|+|.
 
 Each line is divided into \emph{word symbols}, \emph{numbers},
 \emph{strings}, and \emph{character symbols}.
 Word symbols start with an alphabetic character and are followed by
 zero or more alphanumeric characters.
-The underscore, \verb|_|, and the dollar sign, \verb|$|, count as
+The underscore, \verb|_|, and the dollar sign, \verb|$|, are treated like as
 alphabetic characters.
 
 There are no reserved words in \emph{MPL} but words with special meaning
@@ -79,46 +100,67 @@ There are eight data types in MPL. \emph{Real}, \emph{complex},
 addition data types.
 
 \subsection{Real}
-The \emph{real} data type is a double-precision floating point value.\footnote{Hopefully IEEE 754.}
-Real number can be writen as a decimal number with an optional exponent.
+The \emph{real} data type, internally, is represented by a double-precision floating point value.\footnote{Hopefully IEEE 754.}
+Real numbers can be written as a decimal number with an optional exponent.
 The following are all valid ways to write real numbers:
 \begin{center}
   \begin{tabular}{cc}
     \verb|142857| &  \verb|3.14159| \\
-    \verb|6.626e-34| & \verb|6.02214076e23|
+    \verb|6.626e-34| & \verb|6.02214076e23| \\
+    \verb|1e+100| \\
   \end{tabular}
 \end{center}
 You cannot use commas or spaces to format numbers.
 
-The math operators for \emph{real} are \verb|+| (addition),
-\verb|-| (subtraction and negation), \verb|*| (multiplication),
-\verb|/| (division), \verb|div| (floored division), \verb|mod| (modulus),
-and \verb|^| (exponenazation).
-Floored division ``\verb|a div b|'' is $q = \lfloor a/b \rfloor$.
-The modulus operation ``\verb|a mod b|'' is then $r = b\lfloor a/b \rfloor - a$.
-Note that these are different than many other languages.
+The arithmetic operators for \emph{real} are:
+\begin{center}
+  \begin{tabular}{c}
+    \verb|-| \emph{real} \\
+    \emph{real} \verb|+| \emph{real} \\
+    \emph{real} \verb|-| \emph{real} \\
+    \emph{real} \verb|*| \emph{real} \\
+    \emph{real} \verb|/| \emph{real} \\
+    \emph{real} \verb|div| \emph{real} \\
+    \emph{real} \verb|mod| \emph{real} \\
+    \emph{real} \verb|^| \emph{real} \\
+  \end{tabular}
+\end{center}
+The \verb|div| operator is a floored division, \verb|a div b| is $\lfloor a/b \rfloor $.
+The \verb|mod| operator is the modulus operation, \verb|a mod b| is $b\lfloor a/b\rfloor - a$.
+Note that this is different then many other languages.
 
-Since \emph{MPL} has no Boolean type the Boolean operators use type \emph{real}.
-Any non-zero value is treated as true and zero is reated as false.
-The results are alway either 1.0 for true and 0.0 for false.
-The Boolean operators are \verb|and|, \verb|or|, and \verb|not|.
-The constants \verb|TRUE| and \verb|FALSE| are defined to 1 and 0.
+The comparison operators for reals return a real value of 1 for true and a real value of 0 for false.
+\begin{center}
+  \begin{tabular}{c}
+    \emph{real} \verb|==| \emph{real} \\
+    \emph{real} \verb|!=| \emph{real} \\
+    \emph{real} \verb|<| \emph{real} \\
+    \emph{real} \verb|<=| \emph{real} \\
+    \emph{real} \verb|>| \emph{real} \\
+    \emph{real} \verb|>=| \emph{real} \\
+  \end{tabular}
+\end{center}
 
-\emph{Real} numbers can be compared using the relational operators
-equal \verb|==|, not equal \verb|!=|, less than \verb|<|, less than or equal \verb|<=|, greater than \verb|>|, and greater then or equal \verb|>=|.  The results of the relational operators are either 1.0 for true and 0.0 for false.
-
+There are logic operators for real. The operands for the logic operators are non-zero for true and zero for false.
+\begin{center}
+  \begin{tabular}{c}
+    \verb|not| \emph{real} \\
+    \emph{real} \verb|and| \emph{real} \\
+    \emph{real} \verb|or| \emph{real} \\
+  \end{tabular}
+\end{center}
 
 \subsection{Complex}
-Internally, \emph{complex} numbers use a pair of floating-point numbers to represent the real and imaginary
-parts. They can by typed by surrounding the comma sepreated real and imaginary parts with parenthesis.
-The number $3 + 4i$ is writen
+Complex numbers are represented by a pair of double-precision floating-point numbers representing the
+real and imaginary parts.
+They can be written with parenthesis surrounding the comma sepreated real and imaginary parts.
+The number $3 + 4i$ is written
 \begin{verbatim}
 (3, 4)
 \end{verbatim}
-The values for the parts of a complex number can be any \emph{real} valued
+The values for the parts of a complex number can be any real valued
 expression.
-You can used this notation for constructing complex number out of
-real number parts.
+The real and imaginary parts can be any real expression.
 \begin{verbatim}
 (cos(x)^2, sqrt(y))
 \end{verbatim}
@@ -134,53 +176,290 @@ polar(2, PI/6)
 2*cis(PI/6)
 2*exp(I*PI/6)
 \end{verbatim}
-all represent the same number. ($2e^{i \pi/6}$.)
+all represent the number $2e^{i \pi/6}$.
 
-To get the real or imaginary parts of a complex number use
-the \verb|real| or \verb|imag| functions.
-The magnitude and argument of a complex nuber can be found using
-the \verb|abs| and \verb|arg| functions.
-The \verb|norm| function returns the magnitude squared of a
-complex number. To find the complex conjugate of a number
-use the \verb|conj| function.
-
-The arithmetic operator for complex numbers are \verb|+| (addition),
-\verb|-| (subtraction and negation), \verb|*| (multiplication),
-\verb|/| (division), and \verb|^| (exponenazation).
-Complex numbers can be compared for equals, \verb|==|,
-or not equals, \verb|!=|.
-
-If reals and complex are mixed for any operator then the result is complex.
-If only reals are used for operators or functions then the result is real.
-For example, \verb|sqrt(-4)| prints \verb|-nan|, but
-\verb|sqrt((-4,0))| prints \verb|(0,2)|.
-
-\subsection{Vector}
-
-The vector type is a Euclidean $n$-space vector.
-The math operators for vector are \verb|+| (addition),
-\verb|-| (subtraction and negation), \verb|*| (scalar multiplication,
-dot product), \verb|/| (scalar division).
-The following table show the defined operations of vectors.
+The arithmetic operators for \emph{complex} are:
 \begin{center}
-  \begin{tabular}{ccl}
-    operation & result \\
-    \verb|-| \emph{vector} & \emph{vector} \\
-    \emph{vector} \verb|+| \emph{vector} & \emph{vector} \\
-    \emph{vector} \verb|-| \emph{vector} & \emph{vector} \\
-    \emph{real} \verb|*| \emph{vector} & \emph{vector} & scalar multiplication \\ 
-    \emph{vector} \verb|*| \emph{real} & \emph{vector} & scalar multiplication \\
-    \emph{vector} \verb|*| \emph{vector} & \emph{real} & dot product \\
-    \emph{vector} \verb|/| \emph{real} & \emph{vector} & scalar multiplication \\
+  \begin{tabular}{c}
+    \verb|-| \emph{complex} \\
+    \emph{complex} \verb|+| \emph{complex} \\
+    \emph{complex} \verb|-| \emph{complex} \\
+    \emph{complex} \verb|*| \emph{complex} \\
+    \emph{complex} \verb|/| \emph{complex} \\
+    \emph{complex} \verb|^| \emph{complex} \\
   \end{tabular}
 \end{center}
+The comparison operators complex numbers are:
+\begin{center}
+  \begin{tabular}{c}
+    \emph{real} \verb|==| \emph{real} \\
+    \emph{real} \verb|!=| \emph{real} \\
+  \end{tabular}
+\end{center}
+Operators with mixed real and complex operands act as if the
+real operand is complex.
+Operators that are not defined for complex types are also
+undefined for mix real and complex types.
+
+\subsection{Vector}
+The vector type is a Euclidean $n$-space vector.
+A vector is written with square brackets surounding a comma seperated
+list of real expressions.
+\begin{verbatim}
+[ 1, 2, 3]
+[ sqrt(a), a, a^2 ]
+\end{verbatim}
+The arithmetic operators for vectors are:
+\begin{center}
+  \begin{tabular}{c}
+    \verb|-| \emph{vector} \\
+    \emph{vector} \verb|+| \emph{vector} \\
+    \emph{vector} \verb|-| \emph{vector} \\
+    \emph{real} \verb|*| \emph{vector} \\
+    \emph{vector} \verb|*| \emph{real} \\
+    \emph{vector} \verb|*| \emph{vector} \\
+    \emph{vector} \verb|/| \emph{real} \\
+  \end{tabular}
+\end{center}
+The \emph{vector} \verb|*| \emph{vertor} operator is a dot product and results in a real.
+The comparison operators for vectors are:
+\begin{center}
+  \begin{tabular}{c}
+    \emph{vector} \verb|==| \emph{vector} \\
+    \emph{vector} \verb|!=| \emph{vector} \\
+  \end{tabular}
+\end{center}
+
+\subsection{Complex Vector}
+The complex vector is a vector of complex numbers instead of real numbers.
+Complex vectors are written the same as real vectors except
+at least one of the members must be a complex type.
+\begin{verbatim}
+[ (1,2), 3 ]
+\end{verbatim}
+
+The operators for complex vectors are the same as real vectors.
+The dot product for complex vectors produce the Hermitian inner product.
+When mixing reals and vectors with complex vectors in expressions the
+reals and real vectors are treated like complex and complex vectors.
+
+\subsection{Matrix}
+A matrix is a two-dimential array of real numbers.
+A matrix is written simular to a vector except different rows of the
+matrix are seperated by a vertical bar, \verb$|$.
+\begin{verbatim}
+[ 1, 2, 3 | 4, 5, 6 | 7, 8, 9]
+\end{verbatim}
+Matricies can also be written with each row on a seperate line.
+\begin{verbatim}
+[ 1, 2, 3
+  4, 5, 6
+  7, 8, 9 ]
+\end{verbatim}
+There is no way to write a matix with a single row.
+If the number of members in each row is different then the number columns is the same as
+the row with the most members and missing members are filled with 0.
+
+Like vectors, matrix members can be any real-valued expression.
+For example, you could write:
+\begin{verbatim}
+[ cos(theta), -sin(theta)
+  sin(theta), cos(theta) ]
+\end{verbatim}
+
+The arithmetic operators for \emph{matrix} are:
+\begin{center}
+  \begin{tabular}{c}
+    \verb|-| \emph{matrix} \\
+    \emph{matrix} \verb|+| \emph{matrix} \\
+    \emph{matrix} \verb|-| \emph{matrix} \\
+    \emph{real} \verb|*| \emph{matrix} \\
+    \emph{matrix} \verb|*| \emph{real} \\
+    \emph{matrix} \verb|*| \emph{vector} \\
+    \emph{matrix} \verb|*| \emph{matrix} \\
+    \emph{matrix} \verb|/| \emph{real} \\
+  \end{tabular}
+\end{center}
+
+The comparison operators for matrix are:
+\begin{center}
+  \begin{tabular}{c}
+    \emph{matrix} \verb|==| \emph{matrix} \\
+    \emph{matrix} \verb|!=| \emph{matrix} \\
+  \end{tabular}
+\end{center}
+
+\subsection{Complex Matrix}
+The complex matrix is simular to a matrix but with complex values.
+They are written the same as a real matrix but at least one member is complex.
+The operators for a complex matrix are the same as matrix.
+Operators mixing matrix/complex matrix, vector/complex vector and real/complex
+will treat the real types as their complex counterpart.
+Although complex vectors use a Hermitian inner product, complex matrices do not.
+
+\subsection{String}
+A string is an array of zero or more characters.
+String are written by surounding characters with double quotes.
+\begin{verbatim}
+"Hello, world"
+\end{verbatim}
+The quote character and some control characters can be included
+in a string with ``C''-style escape sequences.
+\begin{center}
+  \begin{tabular}{cl}
+    \verb|\a| & alert \\
+    \verb|\b| & backspace \\
+    \verb|\e| & ASCII escape \\
+    \verb|\f| & formfeed \\
+    \verb|\n| & newline \\
+    \verb|\r| & carriage return \\
+    \verb|\t| & tab \\
+    \verb|\v| & vertical tab \\
+  \end{tabular}
+\end{center}
+
+Any character not in the above table following a backslash will be that
+character without the backslash. Thus, a \verb|\"| will be a quote
+character.
+The quotes surounding the string are not printed.
+
+The arithmetic operators for \emph{string} are:
+\begin{center}
+  \begin{tabular}{c}
+    \verb|-| \emph{string} \\
+    \emph{string} \verb|+| \emph{string} \\
+    \emph{string} \verb|-| \emph{string} \\
+    \emph{real} \verb|*| \emph{string} \\
+    \emph{string} \verb|*| \emph{real} \\
+  \end{tabular}
+\end{center}
+The negation operator reverses the order of the string.
+The \verb|+| operator will concatenate the two string.
+The subtraction operator concatenates the first string and the reverse of the second string.
+The \verb|*| operator repeates the string the number of times specified by the real value.
+If the real value is negative, then it repeates the reverse of the string the number of times
+specified by the absolute value of the real value.
+\begin{center}
+  \begin{tabular}{cc}
+    expression & result \\
+    \verb|-"abc"| & \verb|"cba"| \\
+    \verb|"abc" + "def"| & \verb|"abcdef"| \\
+    \verb|"abc" - "def"| & \verb|"abcfed"| \\
+    \verb|3*"abc"| & \verb|"abcabcabc"| \\
+    \verb|"abc"*-3| & \verb|"cbacbacba"| \\
+  \end{tabular}
+\end{center}
+
+The comparison operators for string return are:
+\begin{center}
+  \begin{tabular}{c}
+    \emph{string} \verb|==| \emph{string} \\
+    \emph{string} \verb|!=| \emph{string} \\
+    \emph{string} \verb|<| \emph{string} \\
+    \emph{string} \verb|<=| \emph{string} \\
+    \emph{string} \verb|>| \emph{string} \\
+    \emph{string} \verb|>=| \emph{string} \\
+  \end{tabular}
+\end{center}
+The string comparison operators work only on the character codes for each character in the strings.
+So \verb|"Z" < "a"| is true and \verb|"29" > "8"| is false. 
+
+\subsection{List}
+A list is an array of zero of more objects.
+Each member of a list can be any type independent of the other members, including another list.
+A list is written with curly braces surounding a comma seperated list of objects.
+\begin{verbatim}
+{ (1.2, 3.4), [1,2,3|4,5,6], "abc" }
+\end{verbatim}
+
+All operators operate on lists in a special way.
+Unary operators on a list results in a list a list where that unary operator is
+applied to evey member of that list.
+\begin{verbatim}
+-{5, "abc", [1,-2,3]}
+\end{verbatim}
+results in\footnote{The quotes around the string are not printed.}
+\begin{verbatim}
+{-5, "cba", [-1, 2, -3]}
+\end{verbatim}
+
+Binary operators have two forms.
+On form is both operands are lists.
+\begin{center}
+  \emph{list} \emph{op} \emph{list}
+\end{center}
+The result of this form is a list with the operator applies
+to each member of both operands. If the operand have different
+sizes, the members of the smaller list are repeated.
+\begin{verbatim}
+{1, 2, 3} + { 1, 2, 3, 4, 5}
+\end{verbatim}
+results in
+\begin{verbatim}
+{2, 4, 6, 5, 7}
+\end{verbatim}
+
+The other form of binary operators is mixing a list operand with a non-list operand.
+In this case the result is a list where the singular value is operated on each member
+of the list operand.
+\begin{verbatim}
+2*{1, 2, 3}
+\end{verbatim}
+results in
+\begin{verbatim}
+{2, 4, 6}
+\end{verbatim}
+
+\section{Indexing}
+Individul members of vectors, matricies, string and list can be accessed
+by indexes. Only variables and indexed variables can be indexed, not
+general expressions.
+
+\subsection{Simple Index}
+A simple index selectes one member from the object.
+Simple indexes are written by the variable name followed by an index surrounded
+by square brackets.
+\begin{verbatim}
+a[2]
+\end{verbatim}
+All indexes are zero based so an index of 1 gives the second member of the object.
+A simple index of a matrix variable results in a vector of that row.
+A member of a matrix at a given row and column can given by two indexs
+\begin{verbatim}
+m[r][c]
+\end{verbatim}
+Or you could use matrix indexes.
+When elements of a list can be indexed you can use multiple indexes as well.
+
+\subsection{Matrix Index}
+A matrix index can access member of a specific row and column.
+These indexes are written using a single pair of square brackets with
+a row and column index inside, seperated by a comma.
+\begin{verbatim}
+m[r,c]
+\end{verbatim}
+If the row index is blank then a vector of the specified column is returned.
+If the column index is blank then the row is returned.
+
+If \verb|M| is a matrix:
+\begin{center}
+  \begin{tabular}{cccl}
+    \verb|M[1][2]| & or & \verb|M[1,2]| & returns the value at row 1 and column 2 \\
+    \verb|M[1,]| & or & \verb|M[1]| & returns a vector of row 1 \\
+    && \verb|M[,2]| & return a vector of column 2 \\
+  \end{tabular}
+\end{center}
+
+\subsection{Slices}
+Slices are used to 
+
 
 \section{Expressions}
 \section{Commands}
 \subsection{Print Command}
 The \emph{print} command is just an expression on a line by itself.
 \begin{center}
-  \verb|<|\emph{expression}\verb|>|
+  \emph{expression}
 \end{center}
 The expression is evaluated and its value printed.
 For formated ouput see the standard library.
@@ -188,7 +467,7 @@ For formated ouput see the standard library.
 The \emph{assignemnt} command evaluates an expresion and
 assigns its value to a variable.
 \begin{center}
-  \verb|<|\emph{lvalue}\verb|> = <|\emph{expression}\verb|>|
+  \emph{lvalue} = \emph{expression}
 \end{center}
 The \emph{lvalue} can be either a simple variable or an indexed variable.
 If the \emph{lvalue} is a simple variable the previous value and
@@ -199,11 +478,18 @@ of the expression must match the lvalue.
 The \emph{include} command is use to the include a file as if
 that file replaces the include command.
 \begin{center}
-  \verb|include <|\emph{expression}\verb|>|
+  \verb|include| \emph{expression}
 \end{center}
+The parameter to the include command can be any expression that results in a string.
+\subsection{Function Definition}
+A function definition command is a multi-lined command used to define functions.
+See the section on Functions for this command.
 \section{Statements}
 \section{Functions}
 \section{Standard Library}
+\begin{tabular}{lp{8cm}}
+  \verb|ceil(x)| & Ceiling function. Rounds $x$ to smallest integer greater than or equal to $x$. \\
+\end{tabular}
 \section{Things You're Not Suppose to Know.}
 This section is for documenting ``undocumneted'' features of \emph{MPL}.
 These are features of the language that may change in the future.
