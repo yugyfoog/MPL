@@ -1829,9 +1829,27 @@ Value_ptr power(Value *u, Value *v) {
   return 0;
 }
 
+/*
+
+ a.start, a.size, a.stride
+ b.start, b.size. b.stride
+
+ c.start = a.start + a.stride*b.start;
+ c.size = b.size
+ c.stride = a.stride*b.stride
+
+
+
+
+
+ */
+
+
 std::slice compose(std::slice const &a, std::slice const &b) {
   int new_start = a.stride()*b.start() + a.start();
-  int new_size = std::min((a.size() - b.start() - 1)/b.stride() + 1, b.size());
+  int new_size = b.size();
+  if ((b.size()-1)*b.stride() + b.start() > a.size())
+    mpl_error("slice out of range");
   int new_stride = a.stride()*b.stride();
   return std::slice(new_start, new_size, new_stride);
 }

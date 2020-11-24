@@ -349,6 +349,8 @@ Slice::Slice(Value_ptr strt, Value_ptr len, Value_ptr strd) {
   _start = round(sr->value());
   _size = round(sz->value());
   _stride = round(sd->value());
+  if (_start < 0 || _size < 1 || _stride < 1)
+    mpl_error("illegal slice");
 }
 
 // this should never get called

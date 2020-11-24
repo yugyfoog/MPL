@@ -650,10 +650,8 @@ void formal_parameter_list() {
     do {
       std::string id = identifier();
       auto p = local_symbol_table.find(id);
-      if (p == local_symbol_table.end()) {
+      if (p == local_symbol_table.end())
 	local_symbol_table[id] = -(++locals);
-	// std::cout << "new parameter: " << id << ": " << local_symbol_table[id] << std::endl;
-      }
       else {
 	std::cout << "parameter \"" << id << "\" repeated in parameter list" << std::endl;
 	exit(1);

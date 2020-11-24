@@ -291,7 +291,7 @@ The comparison operators for matrix are:
 
 \subsection{Complex Matrix}
 The complex matrix is simular to a matrix but with complex values.
-They are written the same as a real matrix but at least one member is complex.
+They are bulit the same as a real matrix but at least one member is complex.
 The operators for a complex matrix are the same as matrix.
 Operators mixing matrix/complex matrix, vector/complex vector and real/complex
 will treat the real types as their complex counterpart.
@@ -451,10 +451,74 @@ If \verb|M| is a matrix:
 \end{center}
 
 \subsection{Slices}
-Slices are used to 
-
-
+Slices are use to specify parts of an indexable type.
+For example, given a vertor,
+\begin{center}
+\verb|v = [1, 2, 3, 4, 5, 6]|
+\end{center}
+then the following expression results in:
+\begin{center}
+\begin{tabular}{ccc}
+  \verb|v[1:3]| & $\Rightarrow$ & \verb|[2, 3, 4]| \\
+  \verb|v[1:3:2]| & $\Rightarrow$ & \verb|[2, 4, 6]| \\
+\end{tabular}
+\end{center}
+The first number in a slice is the initial index for the slice.
+The second number is the number of members in a slice.
+The optional third number is the stride, i.e., the difference between
+adjacent indexes.
+If the third number is not present, the stride defaults
+to one.
+Slices can be used for any type and in any way that regular indexes occure.
+The commands:
+\begin{verbatim}
+a = "abcdef"
+b = "ABCDEF"
+a[1:3:2] = b[0:3:2]
+a
+\end{verbatim}
+will print out:
+\begin{verbatim}
+aAcCeE
+\end{verbatim}
 \section{Expressions}
+\begin{center}
+  \begin{tabular}{cl}
+    \emph{number} & real number \\
+    \emph{string} & string \\
+    \emph{var} & variable \\
+    \emph{var} \verb|[| \emph{expr} \verb|]| & simple index \\
+    \emph{var} \verb|[| \emph{expr} \verb|,| \emph{expr} \verb|]| & matrix index \\
+    \emph{func}\verb|(| \emph{expr-list} \verb|)| & function \\
+    \verb|(| \emph{expr} \verb|,| \emph{expr} \verb|)| & complex number \\
+
+    \verb|[| \emph{expr-list} \verb|]| & vector \\
+    \verb|[| \emph{row-list} \verb|]| & matrix \\
+    \verb|{| \emph{expr-list} \verb|}| & list \\
+  \end{tabular}
+\end{center}
+\begin{center}
+  \begin{tabular}{cll}
+    \verb|(| \emph{expr} \verb|)| & grouping  \\ \hline
+    \emph{expr} \verb|^| \emph{expr} & exponentation & right \\ \hline
+    \verb|-| \emph{expr} & negation & left \\ \hline
+    \emph{expr} \verb|*| \emph{expr} & multiplication & left \\
+    \emph{expr} \verb|/| \emph{expr} & division & left \\
+    \emph{expr} \verb|div| \emph{expr} & floored division & left \\
+    \emph{expr} \verb|mod| \emph{expr} & modulus & left \\ \hline
+    \emph{expr} \verb|+| \emph{expr} & addition & left \\
+    \emph{expr} \verb|-| \emph{expr} & subtraction & left \\ \hline
+    \emph{expr} \verb|==| \emph{expr} & equal, $=$ & none \\
+    \emph{expr} \verb|!=| \emph{expr} & no equal, $\ne$ & none \\
+    \emph{expr} \verb|<| \emph{expr} & less than, $<$ & none \\
+    \emph{expr} \verb|<=| \emph{expr} & less than or equal, $\le$ & none \\
+    \emph{expr} \verb|>| \emph{expr} & greater than, $>$ & none \\
+    \emph{expr} \verb|>=| \emph{expr} & greater than or equal, $\ge$ & none \\ \hline
+    \verb|not| \emph{expr} & logical \emph{not} & left \\ \hline
+    \emph{expr} \verb|and| \emph{expr} & logical \emph{and} & left \\ \hline
+    \emph{expr} \verb|or| \emph{expr} & logical \emph{or} & left \\
+  \end{tabular}
+\end{center}
 \section{Commands}
 \subsection{Print Command}
 The \emph{print} command is just an expression on a line by itself.
@@ -483,9 +547,148 @@ that file replaces the include command.
 The parameter to the include command can be any expression that results in a string.
 \subsection{Function Definition}
 A function definition command is a multi-lined command used to define functions.
-See the section on Functions for this command.
+The first line of a function defintion gives the name and parameters of the function.
+\begin{center}
+  \verb|function| \emph{name} \verb|(| \emph{argument-list} \verb|)|
+\end{center}
+If the function take no arguments, the empty parenthisis are still required.
+The function definition ends with an \emph{end} statement.
+\begin{center}
+  \verb|end|
+\end{center}
+In between the first and last line of a function definition are the statements that make up the function.
+\section{Variables}
+\emph{MPL} is a loosely typed language.
+Variables can be assigned any type.
+If a variable is assigned a new value, that value need not be same
+same type as the previous value.
+
+There are three kinds of variables. Global variables, local variables and function arguments.
+Global variables are defined (given a value) outside a function.
+Their scope is from the initial assignment till the end of the prorgram.
+
+Function arguments are defined in the first line of a function definition.
+Their scope is till the end of the function.
+Function arguments are ``pass by reference'', meaning the if you assign a new value to the argument the new value is reflected in the variable passed to the function.
+If the value of a parameter is an expression and not a variable, then reassigning the parameter in a function does not change any variable outside the function.
+If the following code as executed:
+\begin{verbatim}
+function test(x)
+    x = "hello, world"
+end
+a = 5
+test(a)
+a
+\end{verbatim}
+then
+\begin{verbatim}
+"hello, world"
+\end{verbatim}
+will be printed. However, the following code:
+\begin{verbatim}
+function test(x)
+    x = "hello, world"
+end
+a = 5
+test(a+0)
+a
+\end{verbatim}
+will print
+\begin{verbatim}
+5
+\end{verbatim}
+
+Local variable, like function parameters, have scope limited to the function.
+If a variable has not been defined as a global variable, assigning a value
+to it in a function defines it as a local variable.
+If a local variable is latter defined as a global variable, it remains a local variable within the function.
+
 \section{Statements}
-\section{Functions}
+The \emph{print} and \emph{assignment} commands also work as statements in a function.
+\subsection{If Statement}
+\begin{center}
+  \begin{tabular}{l}
+    \verb|if| \emph{expression} \verb|then| \\
+    \quad\quad \emph{statements} \\
+    \verb|else if| \emph{expression} \verb|then| \\
+    \quad\quad \emph{statements} \\
+    \verb|else| \\
+    \quad\quad \emph{statements} \\
+    \verb|end| \\
+  \end{tabular}
+\end{center}
+The \emph{if} statement only executes statements following it if \emph{expression} evaluates to true.
+An \emph{else if} clause will execute the statements following it if a previous \emph{if} or \emph{else if} clause evaluates to false and the its own expression evaluates to true. An \emph{else} clause only executes the statements following it if the previous \emph{if} or \emph{else if} clause evalutates to false.
+The \emph{end} clause end any conditional executation. There can be 0 or more \emph{else if} and \emph{else} parts in an \emph{if} statement.
+\subsection{While Statement}
+\begin{center}
+  \begin{tabular}{l}
+    \verb|while| \emph{expression} \\
+    \quad\quad \emph{statements} \\
+    \verb|end| \\
+  \end{tabular}
+\end{center}
+\subsection{Repeat Statement}
+\begin{center}
+  \begin{tabular}{l}
+    \verb|repeat| \\
+    \quad\quad \emph{statements} \\
+    \verb|until| \emph{expression} \\
+  \end{tabular}
+\end{center}
+\subsection{For Statement}
+\begin{center}
+  \begin{tabular}{l}
+    \verb|for| \emph{variable} \verb|in| \emph{range-specifier} \\
+    \quad\quad \emph{statements} \\
+    \verb|end| \\
+  \end{tabular}
+\end{center}
+The code
+\begin{verbatim}
+for x in {"a", "b", "c"}
+    x
+end
+\end{verbatim}
+prints
+\begin{verbatim}
+a
+b
+c
+\end{verbatim}
+The code
+\begin{verbatim}
+for i in 1:3
+    i
+end
+\end{verbatim}
+prints
+\begin{verbatim}
+1
+2
+3
+\end{verbatim}
+The code
+\begin{verbatim}
+for i in 1:5:2
+    i
+end
+\end{verbatim}
+prints
+\begin{verbatim}
+1
+3
+5
+\end{verbatim}
+\subsection{Return Statement}
+\begin{center}
+  \verb|return| \emph{expression}
+\end{center}
+The \emph{return} statement ends the execution of a function and specifies the return
+value.
+The return value is optional.
+If the executions of a function reaches the end of the function there is an implicite return statement and the function ends without a return value.
+Functions that return without a value can only be used in \emph{print} statements/commands.
 \section{Standard Library}
 \begin{tabular}{lp{8cm}}
   \verb|ceil(x)| & Ceiling function. Rounds $x$ to smallest integer greater than or equal to $x$. \\
