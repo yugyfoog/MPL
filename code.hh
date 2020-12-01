@@ -332,12 +332,30 @@ public:
   Value_ptr execute();
 };
 
+class Pointwise_Multiply : public Code {
+private:
+  Code *lhs, *rhs;
+public:
+  Pointwise_Multiply(Code *l, Code *r) : lhs(l), rhs(r) { }
+  ~Pointwise_Multiply() { delete lhs; delete rhs; }
+  Value_ptr execute();
+};
+
 class Divide : public Code {
 private:
   Code *lhs, *rhs;
 public:
   Divide(Code *l, Code *r) : lhs(l), rhs(r) { }
   ~Divide() { delete lhs; delete rhs; }
+  Value_ptr execute();
+};
+
+class Pointwise_Divide : public Code {
+private:
+  Code *lhs, *rhs;
+public:
+  Pointwise_Divide(Code *l, Code *r) : lhs(l), rhs(r) { }
+  ~Pointwise_Divide() { delete lhs; delete rhs; }
   Value_ptr execute();
 };
 

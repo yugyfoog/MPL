@@ -174,3 +174,43 @@ end
 function cross(x, y)
     return [x[1]*y[2] - x[2]*y[1], x[2]*y[0] - x[0]*y[2], x[0]*y[1] - x[1]*y[0]]
 end
+
+function islower(s)
+    c = s[0]
+    if "a" <= c and c <= "z" then
+        return TRUE
+    end
+    return FALSE
+end
+
+function isupper(s)
+    c = s[0]
+    if "A" <= c and c <= "Z" then
+        return TRUE
+    end
+    return FALSE
+end
+
+function tolower(s)
+    rv = ""
+    for i in 0:size(s)-1
+        if isupper(s[i]) then
+	    rv = rv + char(ascii(s[i]) + 32)
+	else
+	    rv = rv + s[i]
+	end
+    end
+    return rv
+end
+
+function toupper(s)
+    rv = ""
+    for i in 0:size(s)-1
+        if islower(s[i]) then
+	    rv = rv + char(ascii(s[i]) - 32)
+	else
+	    rv = rv + s[i]
+	end
+    end
+    return rv
+end

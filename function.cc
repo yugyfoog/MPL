@@ -325,6 +325,16 @@ Value_ptr mpl_ascii() {
   return 0;
 }
 
+Value_ptr mpl_char() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) == typeid(Real)) {
+    std::string s(1, (char)round(((Real *)x)->value()));
+    return Value_ptr(new String(s));
+  }
+  mpl_error("type error in char()");
+  return 0;
+}  
+
 Value_ptr mpl_floor() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {

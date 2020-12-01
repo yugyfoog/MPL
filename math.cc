@@ -1544,6 +1544,129 @@ Value_ptr multiply(Value *u, Value *v) {
   return 0;
 }
 
+Vector *pointwise_multiply(Vector *u, Vector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in pointwise multiplication");
+  std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
+  *w *= (*v->data())[v->index()];
+  return new Vector(double_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *pointwise_multiply(Vector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in pointwise multiplication");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
+  int j = u->index().start();
+  for (int i = 0; i < (int)w->size(); i++) {
+    (*w)[i] *= (*u->data())[j];
+    j += u->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *pointwise_multiply(CVector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in pointwise multiplication");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  *w *= (*v->data())[v->index()];
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+Matrix *pointwise_multiply(Matrix *u, Matrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+  
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    mpl_error("sizes unequal inpointwise multiplication");
+
+  int cols = ui.size()[0];
+  int rows = ui.size()[1];
+
+  std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
+  (*w) *= (*v->data())[v->index()];
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new Matrix(double_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+					       std::valarray<std::size_t>(strides, 2)));
+}
+
+CMatrix *pointwise_multiply(Matrix *u, CMatrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    mpl_error("sizes unequal in pointwise multiply");
+  int cols = ui.size()[0];
+  int rows = ui.size()[1];
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*v->data())[v->index()]);
+  int i = 0;
+  int j = ui.start();
+  int m = cols;
+  while (m--) {
+    int n = rows;
+    int k = j;
+    while (n--) {
+      (*w)[i++] *= (*u->data())[k];
+      k += ui.stride()[1];
+    }
+    j += ui.stride()[0];
+  }
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new CMatrix(complex_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+						 std::valarray<std::size_t>(strides, 2)));
+}
+  
+
+CMatrix *pointwise_multiply(CMatrix *u, CMatrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+  
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    mpl_error("sizes unequal inpointwise multiplication");
+
+  int cols = ui.size()[0];
+  int rows = ui.size()[1];
+
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  (*w) *= (*v->data())[v->index()];
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new CMatrix(complex_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+					       std::valarray<std::size_t>(strides, 2)));
+}
+
+Value_ptr pointwise_multiply(Value *u, Value *v) {
+  if (typeid(*u) == typeid(List) || typeid(*v) == typeid(List))
+    return dolist(u, v, pointwise_multiply);
+  if (typeid(*u) == typeid(Vector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(pointwise_multiply((Vector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(pointwise_multiply((Vector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(pointwise_multiply((Vector *)v, (CVector *)u));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(pointwise_multiply((CVector *)v, (CVector *)u));
+  }
+  else if (typeid(*u) == typeid(Matrix)) {
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(pointwise_multiply((Matrix *)u, (Matrix *)v));
+    if (typeid(*v) == typeid(CMatrix))
+      return Value_ptr(pointwise_multiply((Matrix *)u, (CMatrix *)v));
+  }
+  else if (typeid(*u) == typeid(CMatrix)) {
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(pointwise_multiply((Matrix *)v, (CMatrix *)u));
+    if (typeid(*v) == typeid(CMatrix))
+      return Value_ptr(pointwise_multiply((CMatrix *)v, (CMatrix *)u));
+  }
+  mpl_error("type error in pointwise multiply");
+  return 0;
+}
+
 Real *divide(Real *u, Real *v) {
   return new Real(u->value() / v->value());
 }
@@ -1689,6 +1812,174 @@ Value_ptr divide(Value *u, Value *v) {
   }
   std::cout << "don't know how to divide " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
   mpl_error("type_error");
+  return 0;
+}
+
+Vector *pointwise_divide(Vector *u, Vector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in pointwise divide");
+  std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
+  *w /= (*v->data())[v->index()];
+  return new Vector(double_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *pointwise_divide(Vector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in pointwise multiplication");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>(u->index().size());
+  int j = u->index().start();
+  int k = v->index().start();
+  for (int i = 0; i < (int)w->size(); i++) {
+    (*w)[i] = (*u->data())[j] / (*v->data())[k];
+    j += u->index().stride();
+    k += v->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *pointwise_divide(CVector *u, Vector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in pointwise multiplication");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  int j = v->index().start();
+  for (int i = 0; i < (int)w->size(); i++) {
+    (*w)[i] /= (*v->data())[j];
+    j += v->index().stride();
+  }
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+CVector *pointwise_divide(CVector *u, CVector *v) {
+  if (u->index().size() != v->index().size())
+    mpl_error("sizes unequal in pointwise multiplication");
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  *w /= (*v->data())[v->index()];
+  return new CVector(complex_ptr(w), std::slice(0, w->size(), 1));
+}
+
+Matrix *pointwise_divide(Matrix *u, Matrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+  
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    mpl_error("sizes unequal inpointwise multiplication");
+
+  int cols = ui.size()[0];
+  int rows = ui.size()[1];
+
+  std::valarray<double> *w = new std::valarray<double>((*u->data())[u->index()]);
+  (*w) /= (*v->data())[v->index()];
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new Matrix(double_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+					       std::valarray<std::size_t>(strides, 2)));
+}
+
+CMatrix *pointwise_divide(Matrix *u, CMatrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    mpl_error("sizes unequal in pointwise divide");
+  int cols = ui.size()[0];
+  int rows = ui.size()[1];
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>(ui.size()[0]*ui.size()[1]);
+  int i = 0;
+  int j = ui.start();
+  int k = vi.start();
+  int m = cols;
+  while (m--) {
+    int n = rows;
+    int jj = j;
+    int kk = k;
+    while (n--) {
+      (*w)[i++] = (*u->data())[jj]/(*v->data())[kk];
+      jj += ui.stride()[1];
+      kk += vi.stride()[1];
+    }
+    j += ui.stride()[0];
+    k += vi.stride()[0];
+  }
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new CMatrix(complex_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+						 std::valarray<std::size_t>(strides, 2)));
+}
+
+CMatrix *pointwise_divide(CMatrix *u, Matrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    mpl_error("sizes unequal in pointwise divide");
+  int cols = ui.size()[0];
+  int rows = ui.size()[1];
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  int i = 0;
+  int j = vi.start();
+  int m = cols;
+  while (m--) {
+    int n = rows;
+    int k = j;
+    while (n--) {
+      (*w)[i++] /= (*v->data())[k];
+      k += vi.stride()[1];
+    }
+    j += vi.stride()[0];
+  }
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new CMatrix(complex_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+						 std::valarray<std::size_t>(strides, 2)));
+}
+
+CMatrix *pointwise_divide(CMatrix *u, CMatrix *v) {
+  std::gslice ui = u->index();
+  std::gslice vi = v->index();
+  
+  if (ui.size()[0] != vi.size()[0] || ui.size()[1] != vi.size()[1])
+    mpl_error("sizes unequal inpointwise multiplication");
+
+  int cols = ui.size()[0];
+  int rows = ui.size()[1];
+
+  std::valarray<std::complex<double>> *w = new std::valarray<std::complex<double>>((*u->data())[u->index()]);
+  (*w) /= (*v->data())[v->index()];
+  std::size_t lengths[] = {(size_t)cols, (size_t)rows};
+  std::size_t strides[] = {(size_t)rows, 1};
+  return new CMatrix(complex_ptr(w), std::gslice(0, std::valarray<std::size_t>(lengths, 2),
+					       std::valarray<std::size_t>(strides, 2)));
+}
+
+Value_ptr pointwise_divide(Value *u, Value *v) {
+  if (typeid(*u) == typeid(List) || typeid(*v) == typeid(List))
+    return dolist(u, v, pointwise_divide);
+  if (typeid(*u) == typeid(Vector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(pointwise_divide((Vector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(pointwise_divide((Vector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(CVector)) {
+    if (typeid(*v) == typeid(Vector))
+      return Value_ptr(pointwise_divide((CVector *)u, (Vector *)v));
+    if (typeid(*v) == typeid(CVector))
+      return Value_ptr(pointwise_divide((CVector *)u, (CVector *)v));
+  }
+  else if (typeid(*u) == typeid(Matrix)) {
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(pointwise_divide((Matrix *)u, (Matrix *)v));
+    if (typeid(*v) == typeid(CMatrix))
+      return Value_ptr(pointwise_divide((Matrix *)u, (CMatrix *)v));
+  }
+  else if (typeid(*u) == typeid(CMatrix)) {
+    if (typeid(*v) == typeid(Matrix))
+      return Value_ptr(pointwise_divide((CMatrix *)u, (Matrix *)v));
+    if (typeid(*v) == typeid(CMatrix))
+      return Value_ptr(pointwise_divide((CMatrix *)u, (CMatrix *)v));
+  }
+  std::cout << "don't know how to divide " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
+  mpl_error("type error in pointwise divide");
   return 0;
 }
 

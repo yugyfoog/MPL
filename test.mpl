@@ -18,6 +18,7 @@ function error(a, b, s)
     "error " + s
     a
     b
+    a-b
     exit(1)
 end
 
@@ -136,6 +137,33 @@ function test_multiplication()
     end
 end
 
+function test_pointwise_multiplication()
+    a = { [1,2,3], [1,2,3], [(1,2),(3,4),(5,6)], [(1,2),(3,4)], \
+          [1,2|3,4], [1,2|3,4], [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(1,2),(3,4)|(5,6),(7,8)] }
+
+    b = { [4,5,6], [(4,5),(6,7),(8,9)],[7,8,9], [(5,6),(7,8)], \
+          [5,6|7,8], [(1,2),(3,4)|(5,6),(7,8)], [1,2|3,4], \
+	  [(1,2),(3,4)|(5,6),(7,8)] }
+
+    q = { [4,10,18], [(4,5),(12,14),(24,27)], \
+          [(7,14),(24,32),(45,54)], [(-7,16),(-11,52)], \
+	  [5,12|21,32], [(1,2),(6,8)|(15,18),(28,32)], \
+	  [(1,2),(6,8)|(15,18),(28,32)], \
+	  [(-3,4),(-7,24)|(-11,60),(-15,112)] }
+
+    s = { "vector .* vector", "vector .* cvector", "cvector .* vector", \
+          "cvector .* cvector", "matrix .* matrix", "matrix .* cmatrix", \
+	  "cmatrix .* matrix", "cmatrix .* cmatrix" }
+
+    c = a.*b
+    
+    for i in 0:size(a)-1
+        test(q[i], c[i], s[i])
+	i = i + 1
+    end
+end
+
 function test_division()
     a = { 6, 13, (4,6), (-5,10), [2,4,6], [1,2], [(1,2),(3,4)], \
           [(1,2),(3,4)], [2,4|6,8], [1,2|3,4], \
@@ -154,6 +182,33 @@ function test_division()
     for i in 0:size(a)-1
         test(q[i], c[i], s[i])
         i = i + 1
+    end
+end
+
+function test_pointwise_division()
+    a = { [4,10,18], [5,25,100], \
+          [(7,14),(24,32),(45,54)], [(11,52),(-11,52)], \
+	  [5,12|21,32], [5,25|100,113], \
+	  [(1,2),(6,8)|(15,18),(28,32)], \
+	  [(-3,4),(-7,24)|(11,52),(-15,112)] }
+
+    b = { [4,5,6], [(1,2),(3,4),(6,8)], [7,8,9], [(8,7),(7,8)], \
+          [5,6|7,8], [(1,2),(3,4)|(6,8),(7,8)], [1,2|3,4], \
+	  [(1,2),(3,4)|(8,7),(7,8)] }
+
+    q = { [1,2,3], [(1,-2),(3,-4),(6,-8)], [(1,2),(3,4),(5,6)], [(4,3),(3,4)], \
+          [1,2|3,4], [(1,-2),(3,-4)|(6,-8),(7,-8)], [(1,2),(3,4)|(5,6),(7,8)], \
+	  [(1,2),(3,4)|(4,3),(7,8)] }
+	  
+    c = a./b
+
+     s = { "vector ./ vector", "vector ./ cvector", "cvector ./ vector", \
+          "cvector ./ cvector", "matrix ./ matrix", "matrix ./ cmatrix", \
+	  "cmatrix ./ matrix", "cmatrix ./ cmatrix" }
+
+    for i in 0:size(a)-1
+        test(q[i], c[i], s[i])
+	i = i + 1
     end
 end
 
@@ -196,7 +251,9 @@ function test_arithmetic()
     test_addition()
     test_subtraction()
     test_multiplication()
+    test_pointwise_multiplication()
     test_division()
+    test_pointwise_division()
     test_floored_division()
     test_modulo()
     test_exponent()

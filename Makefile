@@ -21,4 +21,4 @@ clean:
 	rm -f *.o *~
 
 test: mpl
-	mpl test.mpl
+	./mpl test.mpl

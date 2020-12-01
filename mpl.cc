@@ -482,6 +482,14 @@ Code *term() {
       x = new Floored_Divide(x, factor());
     else if (match("mod"))
       x = new Modulo(x, factor());
+    else if (match(".")) {
+      if (match("*"))
+	x = new Pointwise_Multiply(x, factor());
+      else if (match("/"))
+	 x = new Pointwise_Divide(x, factor());
+      else
+	mpl_error("syntax error near " + *tokens->front());
+    }
     else
       break;
   }
@@ -730,7 +738,7 @@ void initialize_builtin_functions() {
   function_table["eof"] = new Builtin_Function(0, mpl_eof);
   function_table["type"] = new Builtin_Function(1, mpl_type);
   function_table["ascii"] = new Builtin_Function(1, mpl_ascii);
-
+  function_table["char"] = new Builtin_Function(1, mpl_char);
   function_table["floor"] = new Builtin_Function(1, mpl_floor);
   function_table["ceil"] = new Builtin_Function(1, mpl_ceil);
   function_table["round"] = new Builtin_Function(1, mpl_round);

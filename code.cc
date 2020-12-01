@@ -99,7 +99,7 @@ Value_ptr If::execute() {
 Value_ptr While::execute() {
   Value_ptr rv = 0;
 
-  while (is_true(condition->execute())) {
+  while (is_true(value(condition->execute()))) {
     rv = body->execute();
     if (rv)
       return rv;
@@ -427,10 +427,22 @@ Value_ptr Multiply::execute() {
   return multiply(u.get(), v.get());
 }
 
+Value_ptr Pointwise_Multiply::execute() {
+  Value_ptr u = value(lhs->execute());
+  Value_ptr v = value(rhs->execute());
+  return pointwise_multiply(u.get(), v.get());
+}
+
 Value_ptr Divide::execute() {
   Value_ptr u = value(lhs->execute());
   Value_ptr v = value(rhs->execute());
   return divide(u.get(), v.get());
+}
+
+Value_ptr Pointwise_Divide::execute() {
+  Value_ptr u = value(lhs->execute());
+  Value_ptr v = value(rhs->execute());
+  return pointwise_divide(u.get(), v.get());
 }
 
 Value_ptr Floored_Divide::execute() {
