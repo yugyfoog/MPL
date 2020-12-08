@@ -18,6 +18,8 @@ extern Symbol_Table local_symbol_table;
 extern Symbol_Table global_symbol_table;
 extern Function_Table function_table;
 
+extern bool trace_flag;
+
 Value_ptr read_memory(unsigned);
 void write_memory(unsigned, Value_ptr);
 

@@ -82,6 +82,32 @@ Value_ptr logic_or(Value *u, Value *v) {
   return 0;
 }
 
+Real *bitwise_or(Real *u, Real *v) {
+  return new Real((long)round(u->value()) | (long)round(v->value()));
+}
+
+Value_ptr bitwise_or(Value *u, Value *v) {
+  if (typeid(*u) == typeid(List) || typeid(*v) == typeid(List))
+    return dolist(u, v, bitwise_or);
+  if (typeid(*u) == typeid(Real) && typeid(*v) == typeid(Real))
+    return Value_ptr(bitwise_or((Real *)u, (Real *)v));
+  mpl_error("type error");
+  return 0;
+}
+
+Real *bitwise_xor(Real *u, Real *v) {
+  return new Real((long)round(u->value()) ^ (long)round(v->value()));
+}
+
+Value_ptr bitwise_xor(Value *u, Value *v) {
+  if (typeid(*u) == typeid(List) || typeid(*v) == typeid(List))
+    return dolist(u, v, bitwise_xor);
+  if (typeid(*u) == typeid(Real) && typeid(*v) == typeid(Real))
+    return Value_ptr(bitwise_xor((Real *)u, (Real *)v));
+  mpl_error("type error");
+  return 0;
+}
+
 Real *logic_and(Real *u, Real *v) {
   return new Real(u->value() != 0.0 && v->value() != 0.0);
 }
@@ -95,6 +121,19 @@ Value_ptr logic_and(Value *u, Value *v) {
   return 0;
 }
 
+Real *bitwise_and(Real *u, Real *v) {
+  return new Real((long)round(u->value()) & (long)round(v->value()));
+}
+
+Value_ptr bitwise_and(Value *u, Value *v) {
+  if (typeid(*u) == typeid(List) || typeid(*v) == typeid(List))
+    return dolist(u, v, bitwise_and);
+  if (typeid(*u) == typeid(Real) && typeid(*v) == typeid(Real))
+    return Value_ptr(bitwise_and((Real *)u, (Real *)v));
+  mpl_error("type error");
+  return 0;
+}
+
 Real *logic_not(Real *u) {
   return new Real(u->value() == 0.0);
 }
@@ -104,6 +143,19 @@ Value_ptr logic_not(Value *u) {
     return dolist((List *)u, logic_not);
   if (typeid(*u) == typeid(Real))
     return Value_ptr(logic_not((Real *)u));
+  mpl_error("type error");
+  return 0;
+}
+
+Real *bitwise_not(Real *u) {
+  return new Real(~(long)round(u->value()));
+}
+
+Value_ptr bitwise_not(Value *u) {
+  if (typeid(*u) == typeid(List))
+    return dolist((List *)u, bitwise_not);
+  if (typeid(*u) == typeid(Real))
+    return Value_ptr(bitwise_not((Real *)u));
   mpl_error("type error");
   return 0;
 }

@@ -31,6 +31,8 @@ Symbol_Table local_symbol_table;
 Symbol_Table global_symbol_table;
 Function_Table function_table;
 
+bool trace_flag;
+
 void mpl_error(std::string const &s) {
   std::cout << "error: " << s << std::endl;
   exit(1);
@@ -533,6 +535,8 @@ Code *relational_expression() {
 Code *logical_factor() {
   if (match("not"))
     return new Not(logical_factor());
+  if (match("bnot"))
+    return new BNot(logical_factor());
   return relational_expression();
 }
 
@@ -541,6 +545,8 @@ Code *logical_term() {
   for (;;) {
     if (match("and"))
       x = new And(x, logical_factor());
+    else if (match("band"))
+      x = new BAnd(x, logical_factor());
     else
       break;
   }
@@ -552,6 +558,10 @@ Code *expression() {
   for (;;) {
     if (match("or"))
       x = new Or(x, logical_term());
+    else if (match("bor"))
+      x = new BOr(x, logical_term());
+    else if (match("bxor"))
+      x = new BXor(x, logical_term());
     else
       break;
   }
@@ -742,6 +752,8 @@ void initialize_builtin_functions() {
   function_table["floor"] = new Builtin_Function(1, mpl_floor);
   function_table["ceil"] = new Builtin_Function(1, mpl_ceil);
   function_table["round"] = new Builtin_Function(1, mpl_round);
+  function_table["random"] = new Builtin_Function(0, mpl_random);
+  function_table["randomize"] = new Builtin_Function(0, mpl_randomize);
   function_table["real"] = new Builtin_Function(1, mpl_real);
   function_table["imag"] = new Builtin_Function(1, mpl_imag);
   function_table["abs"] = new Builtin_Function(1, mpl_abs);
@@ -779,6 +791,7 @@ void initialize_builtin_functions() {
 }
 
 int main(int argc, char **argv) {
+  trace_flag = false;
   initialize_builtin_functions();
   file_stack.push(new std::ifstream(stdlib));
   command_loop();

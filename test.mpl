@@ -292,10 +292,30 @@ function test_not()
     end
 end
 
+function test_bor()
+    test(14, 10 bor 12, "bor")
+end
+
+function test_bxor()
+    test(6, 10 bxor 12, "bxor")
+end
+
+function test_band()
+    test(8, 10 band 12, "band")
+end
+
+function test_bnot()
+    test(-2, bnot 1, "bnot")
+end
+
 function test_logic()
     test_or()
     test_and()
     test_not()
+    test_bor()
+    test_bxor()
+    test_band()
+    test_bnot()
 end
 
 function test_eq()

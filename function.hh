@@ -47,6 +47,9 @@ Value_ptr mpl_type();
 Value_ptr mpl_ascii();
 Value_ptr mpl_char();
 
+Value_ptr mpl_random();
+Value_ptr mpl_randomize();
+
 Value_ptr mpl_floor();
 Value_ptr mpl_ceil();
 Value_ptr mpl_round();

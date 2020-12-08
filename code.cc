@@ -330,29 +330,26 @@ Value_ptr Call::execute() {
     std::cout << func << " is not defined" << std::endl;
     exit(1);
   }
-  // std::cout << "    " << frame_pointer << ", " << stack_pointer << std::endl;
- 
   int save_frame_pointer = frame_pointer;
   int save_stack_pointer = stack_pointer;
-
-  // std::cout << "call " << func << std::endl;
-  // std::cout << "    " << frame_pointer << ", " << stack_pointer << std::endl;
-  
   if (args)
     args->execute();
 
   frame_pointer = save_stack_pointer;
   
+  if (trace_flag)
+    std::cout << ">" << func << std::endl;
+  
   Value_ptr rv = f->execute(stack_pointer-frame_pointer);
+
+  if (trace_flag)
+    std::cout << "<" << func << std::endl;
 
   for (int i = save_stack_pointer; i < stack_pointer; i++)
     write_memory(i, 0);
   
   stack_pointer = save_stack_pointer;
   frame_pointer = save_frame_pointer;
-
-  // std::cout << "    " << frame_pointer << ", " << stack_pointer << std::endl;
-
   return rv;
 }
 
@@ -362,15 +359,38 @@ Value_ptr Or::execute() {
   return logic_or(u.get(), v.get());
 }
 
+Value_ptr BOr::execute() {
+  Value_ptr u = value(lhs->execute());
+  Value_ptr v = value(rhs->execute());
+  return bitwise_or(u.get(), v.get());
+}
+
+Value_ptr BXor::execute() {
+  Value_ptr u = value(lhs->execute());
+  Value_ptr v = value(rhs->execute());
+  return bitwise_xor(u.get(), v.get());
+}
+
 Value_ptr And::execute() {
   Value_ptr u = value(lhs->execute());
   Value_ptr v = value(rhs->execute());
   return logic_and(u.get(), v.get());
 }
 
+Value_ptr BAnd::execute() {
+  Value_ptr u = value(lhs->execute());
+  Value_ptr v = value(rhs->execute());
+  return bitwise_and(u.get(), v.get());
+}
+
 Value_ptr Not::execute() {
   Value_ptr u = value(code->execute());
   return logic_not(u.get());
+}
+
+Value_ptr BNot::execute() {
+  Value_ptr u = value(code->execute());
+  return bitwise_not(u.get());
 }
 
 Value_ptr EQ::execute() {

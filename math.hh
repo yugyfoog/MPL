@@ -1,6 +1,10 @@
 Value_ptr logic_or(Value *, Value *);
+Value_ptr bitwise_or(Value *, Value *);
+Value_ptr bitwise_xor(Value *, Value *);
 Value_ptr logic_and(Value *, Value *);
+Value_ptr bitwise_and(Value *, Value *);
 Value_ptr logic_not(Value *);
+Value_ptr bitwise_not(Value *);
 Value_ptr eq(Value *, Value *);
 Value_ptr ne(Value *, Value *);
 Value_ptr lt(Value *, Value *);

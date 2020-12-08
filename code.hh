@@ -234,6 +234,24 @@ public:
   Value_ptr execute();
 };
 
+class BOr : public Code {
+private:
+  Code *lhs, *rhs;
+public:
+  BOr(Code *l, Code *r) : lhs(l), rhs(r) { }
+  ~BOr() { delete lhs; delete rhs; }
+  Value_ptr execute();
+};
+
+class BXor : public Code {
+private:
+  Code *lhs, *rhs;
+public:
+  BXor(Code *l, Code *r) : lhs(l), rhs(r) { }
+  ~BXor() { delete lhs; delete rhs; }
+  Value_ptr execute();
+};
+
 class And : public Code {
 private:
   Code *lhs, *rhs;
@@ -243,11 +261,28 @@ public:
   Value_ptr execute();
 };
 
+class BAnd : public Code {
+private:
+  Code *lhs, *rhs;
+public:
+  BAnd(Code *l, Code *r) : lhs(l), rhs(r) { }
+  ~BAnd() { delete lhs; delete rhs; }
+  Value_ptr execute();
+};
+
 class Not : public Code {
   Code *code;
 public:
   Not(Code *c) : code(c) { }
   ~Not() { delete code; }
+  Value_ptr execute();
+};
+
+class BNot : public Code {
+  Code *code;
+public:
+  BNot(Code *c) : code(c) { }
+  ~BNot() { delete code; }
   Value_ptr execute();
 };
 

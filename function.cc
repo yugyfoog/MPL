@@ -10,6 +10,8 @@
 #include <valarray>
 #include <memory>
 #include <typeinfo>
+#include <random>
+#include <chrono>
 #include "value.hh"
 #include "code.hh"
 #include "function.hh"
@@ -334,6 +336,19 @@ Value_ptr mpl_char() {
   mpl_error("type error in char()");
   return 0;
 }  
+
+std::default_random_engine generator;
+
+Value_ptr mpl_random() {
+  std::uniform_real_distribution<double> distribution(0.0, 1.0);
+  return Value_ptr(new Real(distribution(generator)));
+}
+
+Value_ptr mpl_randomize() {
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  generator.seed(seed);
+  return 0;
+}
 
 Value_ptr mpl_floor() {
   Value *x = value(read_memory(frame_pointer)).get();

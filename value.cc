@@ -33,7 +33,7 @@ Vector::Vector(int s) {
 // characterize already ensured that they are all reals
 
 Vector::Vector(List *l, int n) {
-  // We know the l is a list of Real
+  // We know that l is a list of Real
   base = double_ptr(new std::valarray<double>(n));
   indx = std::slice(0, n, 1);
   std::slice j = l->index();
@@ -349,8 +349,10 @@ Slice::Slice(Value_ptr strt, Value_ptr len, Value_ptr strd) {
   _start = round(sr->value());
   _size = round(sz->value());
   _stride = round(sd->value());
+  /*  -- for statement ranges need sined values!!!
   if (_start < 0 || _size < 1 || _stride < 1)
     mpl_error("illegal slice");
+  */
 }
 
 // this should never get called
