@@ -2345,7 +2345,7 @@ String *simple_index(String *a, Real *i) {
     mpl_error("index out of range");
   std::slice s = a->index();
   string_ptr d = a->data();
-  return new String(d, std::slice(s.start()+n, 1, 1));
+  return new String(d, std::slice(s.start() + n*s.stride(), 1, 1));
 }
   
 String *simple_index(String *a, Slice *i) {

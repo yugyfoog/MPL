@@ -139,7 +139,7 @@ Value_ptr For::execute() {
     int stride = ((Slice *)cond.get())->stride();
     // ranges in for statements are different then ranges in indexes!
     for (int i = start; stride < 0 ? i >= size : i <= size; i += stride) {
-      assign(var.get(), Value_ptr(new Real(i)));
+      assign(var.get(), std::make_shared<Real>(i));
       body->execute();
     }
   }
@@ -151,7 +151,7 @@ Value_ptr For::execute() {
 Value_ptr Return::execute() {
   if (expr)
     return value(expr->execute());
-  return Value_ptr(new Null());
+  return std::make_shared<Null>();
 }
 
 void push_value(Value_ptr x) {
@@ -195,7 +195,7 @@ RealX::RealX(std::string const &s) {
 }
 
 Value_ptr RealX::execute() {
-  return Value_ptr(new Real(x));
+  return std::make_shared<Real>(x);
 }
 
 Value_ptr ComplexX::execute() {
@@ -207,7 +207,7 @@ Value_ptr ComplexX::execute() {
   }
   Real *ru = (Real *)r.get();
   Real *iu = (Real *)i.get();
-  return Value_ptr(new Complex(std::complex<double>(ru->value(), iu->value())));
+  return std::make_shared<Complex>(std::complex<double>(ru->value(), iu->value()));
 }
 
 void StringX::fix_string(std::string const &s) {
@@ -253,19 +253,19 @@ void StringX::fix_string(std::string const &s) {
 }
 
 Value_ptr StringX::execute() {
-  return Value_ptr(new String(str));
+  return std::make_shared<String>(str);
 }
 
 Value_ptr ListX::execute() {
   if (list)
     return list->execute();
-  return Value_ptr(new List());
+  return std::make_shared<List>();
 }
 
 Value_ptr ListPart::execute() {
   Value_ptr x = value(member->execute());
   if (next == 0)
-    return Value_ptr(new List(x));
+    return std::make_shared<List>(x);
   Value_ptr rest = next->execute();
   ((List *)rest.get())->add_to_front(x);
   return rest;
@@ -278,11 +278,9 @@ Variable::Variable(std::string const &s) {
     if (p == global_symbol_table.end())
       if (in_function) {
 	local_symbol_table[s] = index = -(++locals);
-	// std::cout << "new local variable: " << s << ": " << index << std::endl;
       }
       else {
 	global_symbol_table[s] = index = stack_pointer++;
-	// std::cout << "new global variable: " << s << ": " << index << std::endl;
       }
     else
       index = p->second;
@@ -292,7 +290,7 @@ Variable::Variable(std::string const &s) {
 }
 
 Value_ptr Variable::execute() {
-  return Value_ptr(new Memory_Reference(index));
+  return std::make_shared<Memory_Reference>(index);
 }
 
 Value_ptr ColumnIndex::execute() {
@@ -318,10 +316,10 @@ Value_ptr Range::execute() {
   Value_ptr len = value(length->execute());
   Value_ptr strd;
   if (stride == 0)
-    strd = Value_ptr(new Real(1.0));
+    strd = std::make_shared<Real>(1.0);
   else
     strd = value(stride->execute());
-  return Value_ptr(new Slice(strt, len, strd));
+  return std::make_shared<Slice>(strt, len, strd);
 }
 
 Value_ptr Call::execute() {
