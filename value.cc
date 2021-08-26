@@ -25,7 +25,7 @@ std::string Complex::print() const {
 }
 
 Vector::Vector(int s) {
-  base = double_ptr(new std::valarray<double>(s));
+  base = std::make_shared<std::valarray<double>>(s);
   indx = std::slice(0, s, 1);
 }
 
@@ -34,7 +34,7 @@ Vector::Vector(int s) {
 
 Vector::Vector(List *l, int n) {
   // We know that l is a list of Real
-  base = double_ptr(new std::valarray<double>(n));
+  base = std::make_shared<std::valarray<double>>(n);
   indx = std::slice(0, n, 1);
   std::slice j = l->index();
   auto u = l->data();  
@@ -60,13 +60,13 @@ std::string Vector::print() const {
 }
 
 CVector::CVector(int s) {
-  base = complex_ptr(new std::valarray<std::complex<double>>(s));
+  base = std::make_shared<std::valarray<std::complex<double>>>(s);
   indx = std::slice(0, s, 1);
 }
 
 CVector::CVector(List *l, int n) {
   // l is a list of ONLY Real and Complex
-  base = complex_ptr(new std::valarray<std::complex<double>>(n));
+  base = std::make_shared<std::valarray<std::complex<double>>>(n);
   indx = std::slice(0, n, 1);
   std::slice lindex = l->index();
   auto u = l->data();
@@ -96,7 +96,7 @@ std::string CVector::print() const {
 }
 
 Matrix::Matrix(int r, int c) {
-  base = double_ptr(new std::valarray<double>(r*c));
+  base = std::make_shared<std::valarray<double>>(r*c);
   std::size_t lengths[] { (size_t)c, (size_t)r };
   std::size_t strides[] { (size_t)r, 1 };
   indx = std::gslice(0, std::valarray<std::size_t>(lengths, 2),
@@ -123,7 +123,7 @@ valarray  [1,2,3,4,5,6]
  */
 
 Matrix::Matrix(List *l, int r, int c) {
-  base = double_ptr(new std::valarray<double>(r*c));
+  base = std::make_shared<std::valarray<double>>(r*c);
   
   // (row size, col size) i.e. (number of cols, number of rows)
   std::size_t lengths[] = {(size_t)c, (size_t)r};
@@ -197,7 +197,7 @@ std::string Matrix::print() const {
 }
 
 CMatrix::CMatrix(int r, int c) {
-  base = complex_ptr(new std::valarray<std::complex<double>>(r*c));
+  base = std::make_shared<std::valarray<std::complex<double>>>(r*c);
   std::size_t lengths[] { (size_t)c, (size_t)r };
   std::size_t strides[] { (size_t)r, 1 };
   indx = std::gslice(0, std::valarray<std::size_t>(lengths, 2),
@@ -205,7 +205,7 @@ CMatrix::CMatrix(int r, int c) {
 }
 
 CMatrix::CMatrix(List *l, int r, int c) {
-  base = complex_ptr(new std::valarray<std::complex<double>>(r*c));
+  base = std::make_shared<std::valarray<std::complex<double>>>(r*c);
   std::size_t lengths[] = {(size_t)c, (size_t)r};
   std::size_t strides[] = {1, (size_t)c};
   indx = std::gslice(0, std::valarray<std::size_t>(lengths,2),
@@ -270,12 +270,12 @@ std::string CMatrix::print() const {
 
 String::String(std::string const &s) {
   i = std::slice(0, s.length(), 1);
-  base = string_ptr(new std::valarray<char>(s.c_str(), s.length()));
+  base = std::make_shared<std::valarray<char>>(s.c_str(), s.length());
 }
 
 String::String(std::valarray<char> const &a, std::slice const &ai) {
   i = ai;
-  base = string_ptr(new std::valarray<char>(a[ai]));
+  base = std::make_shared<std::valarray<char>>(a[ai]);
 }
 
 std::string String::print() const  {
@@ -288,17 +288,17 @@ std::string String::print() const  {
 }
 
 List::List() {
-  base = list_ptr(new std::vector<Value_ptr>);
+  base = std::make_shared<std::vector<Value_ptr>>();
   i = std::slice(0,0,1);
 }
 
 List::List(int n) {
-  base = list_ptr(new std::vector<Value_ptr>(n, Value_ptr(new Real(0.0))));
+  base = std::make_shared<std::vector<Value_ptr>>(n, std::make_shared<Real>(0.0));
   i = std::slice(0,n,1);
 }
 
 List::List(Value_ptr x) {
-  base = list_ptr(new std::vector<Value_ptr>(1, x));
+  base = std::make_shared<std::vector<Value_ptr>>(std::vector<Value_ptr>(1, x));
   i = std::slice(0,1,1);
 }
 

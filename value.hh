@@ -37,7 +37,7 @@ private:
   int indx;
 public:
   Real(double x) {
-    base = double_ptr(new std::valarray<double>(x, 1));
+    base = std::make_shared<std::valarray<double>>(x, 1);
     indx = 0;
   }
   Real(double_ptr b, int i) : base(b), indx(i) { }
@@ -53,7 +53,7 @@ private:
   int indx;
 public:
   Complex(std::complex<double> const &x) {
-    base = complex_ptr(new std::valarray<std::complex<double>>(x, 1));
+    base = std::make_shared<std::valarray<std::complex<double>>>(x, 1);
     indx = 0;
   }
   Complex(complex_ptr b, int i) : base(b), indx(i) { }
