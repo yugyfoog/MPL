@@ -31,6 +31,7 @@ Value_ptr mpl_stor();
 Value_ptr mpl_gfmt();
 Value_ptr mpl_ffmt();
 Value_ptr mpl_sfmt();
+Value_ptr mpl_hfmt();
 
 Value_ptr mpl_matvec();
 Value_ptr mpl_list();

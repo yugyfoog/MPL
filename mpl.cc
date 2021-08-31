@@ -736,6 +736,7 @@ void initialize_builtin_functions() {
   function_table["gfmt"] = new Builtin_Function(1, mpl_gfmt);
   function_table["ffmt"] = new Builtin_Function(2, mpl_ffmt);
   function_table["sfmt"] = new Builtin_Function(2, mpl_sfmt);
+  function_table["hfmt"] = new Builtin_Function(1, mpl_hfmt);
   function_table["exit"] = new Builtin_Function(1, mpl_exit);
   function_table["list"] = new Builtin_Function(1, mpl_list);
   function_table["vector"] = new Builtin_Function(1, mpl_vector);

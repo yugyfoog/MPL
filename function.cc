@@ -110,7 +110,7 @@ Value_ptr mpl_stor() {
 Value_ptr mpl_gfmt() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) != typeid(Real))
-    mpl_error("formating requires real");
+    mpl_error("type error in gfmt");
   std::ostringstream o;
   o << ((Real *)x)->value();
   return Value_ptr(new String(o.str()));
@@ -135,7 +135,17 @@ Value_ptr mpl_sfmt() {
   o << std::scientific << std::setprecision(round(((Real *)y)->value())) << ((Real *)x)->value();
   return Value_ptr(new String(o.str()));
 }
-  
+
+Value_ptr mpl_hfmt() {
+  Value *x = value(read_memory(frame_pointer)).get();
+  if (typeid(*x) != typeid(Real))
+    mpl_error("type error in hfmt");
+  std::ostringstream o;
+  double t = ((Real *)x)->value();
+  o << '#' << std::hex << *(unsigned long *)&t;
+  return std::make_shared<String>(o.str());
+}
+
 Value_ptr mpl_matvec() {
   Character tst;
   
