@@ -8,11 +8,13 @@ class User_Function : public Function {
 private:
   int params;
   int locals;
-  Code *body;
+  std::unique_ptr<Code> body;
+  // Code *body;
 public:
-  User_Function() : params(0), locals(0), body(0) { }
+  User_Function() = delete;
+  // User_Function() : params(0), locals(0), body(0) { }
   User_Function(int p, int l, Code *b) : params(p), locals(l), body(b) { }
-  ~User_Function() { delete body; }
+  ~User_Function() { /* delete body; */ }
   Value_ptr execute(int);
 };
 

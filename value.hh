@@ -125,6 +125,8 @@ public:
   std::gslice index() { return indx; }
   std::gslice *rindex() { return &indx; }
   void transpose();
+  int rows() { return indx.size()[1]; }
+  int cols() { return indx.size()[0]; }
 };
 
 class String : public Value {

@@ -22,4 +22,4 @@ function pascal(n)
     end
 end
 
-pascal(12)
+pascal(13)

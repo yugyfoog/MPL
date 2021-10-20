@@ -33,7 +33,7 @@ Function_Table function_table;
 
 bool trace_flag;
 
-void mpl_error(std::string const &s) {
+[[ noreturn ]] void mpl_error(std::string const &s) {
   std::cout << "error: " << s << std::endl;
   exit(1);
 }

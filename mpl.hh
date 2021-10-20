@@ -3,6 +3,7 @@ extern bool in_function;
 extern int locals;
 extern int stack_pointer;
 extern int frame_pointer;
+
 extern std::stack<std::istream *> file_stack;
 
 class Value;
@@ -25,4 +26,4 @@ void write_memory(unsigned, Value_ptr);
 
 Value_ptr value(Value_ptr);
 
-void mpl_error(std::string const &);
+[[noreturn]] void mpl_error(std::string const &);

@@ -20,11 +20,8 @@
 Function::~Function() { }
 
 Value_ptr User_Function::execute(int args) {
-  if (args != params) {
-    std::cout << "user parameter size mismatch" << std::endl;
-    std::cout << "have " << args << ", needed " << params << std::endl;
-    exit(1);
-  }
+  if (args != params)
+    mpl_error("function parameter size mismatch");
   stack_pointer += locals;
   if (body) {
     Value_ptr rv = body->execute();
@@ -35,11 +32,8 @@ Value_ptr User_Function::execute(int args) {
 }
 
 Value_ptr Builtin_Function::execute(int args) {
-  if (args != params) {
-    std::cout << "builtin parameter size mismatch" << std::endl;
-    std::cout << "have " << args << ", needed " << params << std::endl;
-    exit(1);
-  }
+  if (args != params)
+    mpl_error("function parameter size mismatch");
   return (*func)();
 }
 
@@ -104,7 +98,7 @@ Value_ptr mpl_stor() {
   std::istringstream i(s);
   double y;
   i >> y;
-  return Value_ptr(new Real(y));
+  return std::make_shared<Real>(y);
 }
 
 Value_ptr mpl_gfmt() {
@@ -113,7 +107,7 @@ Value_ptr mpl_gfmt() {
     mpl_error("type error in gfmt");
   std::ostringstream o;
   o << ((Real *)x)->value();
-  return Value_ptr(new String(o.str()));
+  return std::make_shared<String>(o.str());
 }
 
 Value_ptr mpl_ffmt() {
@@ -123,7 +117,7 @@ Value_ptr mpl_ffmt() {
     mpl_error("type error in ffmt");
   std::ostringstream o;
   o << std::fixed << std::setprecision(round(((Real *)y)->value())) << ((Real *)x)->value();
-  return Value_ptr(new String(o.str()));
+  return std::make_shared<String>(o.str());
 }
 
 Value_ptr mpl_sfmt() {
@@ -133,7 +127,7 @@ Value_ptr mpl_sfmt() {
     mpl_error("type error in ffmt");
   std::ostringstream o;
   o << std::scientific << std::setprecision(round(((Real *)y)->value())) << ((Real *)x)->value();
-  return Value_ptr(new String(o.str()));
+  return std::make_shared<String>(o.str());
 }
 
 Value_ptr mpl_hfmt() {
@@ -155,15 +149,14 @@ Value_ptr mpl_matvec() {
     characterize(u, &tst);
     if (tst.mv == Character::VECTOR) {
       if (tst.rc == Character::REAL)
-	return Value_ptr(new Vector(u, tst.r));
-      return Value_ptr(new CVector(u, tst.r));
+	return std::make_shared<Vector>(u, tst.r);
+      return std::make_shared<CVector>(u, tst.r);
     }
     if (tst.rc == Character::REAL)
-      return Value_ptr(new Matrix(u, tst.r, tst.c));
-    return Value_ptr(new CMatrix(u, tst.r, tst.c));
+      return std::make_shared<Matrix>(u, tst.r, tst.c);
+    return std::make_shared<CMatrix>(u, tst.r, tst.c);
   }
-  mpl_error("type error");
-  return 0;
+  mpl_error("type error in matvec function");
 }
 
 
@@ -172,10 +165,9 @@ Value_ptr mpl_list() {
   if (typeid(*x) == typeid(Real)) {
     Real *xx = (Real *)x.get();
     int n = round(xx->value());
-    return Value_ptr(new List(n));
+    return std::make_shared<List>(n);
   }
-  mpl_error("type error");
-  return 0;
+  mpl_error("type error in list");
 }
 
 Value_ptr mpl_vector() {
@@ -183,10 +175,9 @@ Value_ptr mpl_vector() {
   if (typeid(*x) == typeid(Real)) {
     Real *xx = (Real *)x.get();
     int n = round(xx->value());
-    return Value_ptr(new Vector(n));
+    return std::make_shared<Vector>(n);
   }
   mpl_error("type error");
-  return 0;
 }
 
 Value_ptr mpl_cvector() {
@@ -194,10 +185,9 @@ Value_ptr mpl_cvector() {
   if (typeid(*x) == typeid(Real)) {
     Real *xx = (Real *)x.get();
     int n = round(xx->value());
-    return Value_ptr(new CVector(n));
+    return std::make_shared<CVector>(n);
   }
   mpl_error("type error in cvector()");
-  return 0;
 }
 
 Value_ptr mpl_matrix() {
@@ -206,10 +196,9 @@ Value_ptr mpl_matrix() {
   if (typeid(*r) == typeid(Real) && typeid(*c) == typeid(Real)) {
     int rr = round(((Real *)r.get())->value());
     int cc = round(((Real *)c.get())->value());
-    return Value_ptr(new Matrix(rr, cc));
+    return std::make_shared<Matrix>(rr, cc);
   }
   mpl_error("type error in matrix()");
-  return 0;
 }
 
 Value_ptr mpl_cmatrix() {
@@ -218,10 +207,9 @@ Value_ptr mpl_cmatrix() {
   if (typeid(*r) == typeid(Real) && typeid(*c) == typeid(Real)) {
     int rr = round(((Real *)r.get())->value());
     int cc = round(((Real *)c.get())->value());
-    return Value_ptr(new CMatrix(rr, cc));
+    return std::make_shared<CMatrix>(rr, cc);
   }
   mpl_error("type error in cmatrix()");
-  return 0;
 }
 
 Value_ptr mpl_concat() {
@@ -244,41 +232,42 @@ Value_ptr mpl_concat() {
     return Value_ptr(zz);
   }
   mpl_error("type error");
-  return 0;
 }
 
 Value_ptr mpl_size() {
   Value_ptr x = value(read_memory(frame_pointer));
   if (typeid(*x) == typeid(Real))
-    return Value_ptr(new Real(1.0));
+    return std::make_shared<Real>(1.0);
   if (typeid(*x) == typeid(Complex))
-    return Value_ptr(new Real(1.0));
+    return std::make_shared<Real>(1.0);
   if (typeid(*x) == typeid(Vector))
-    return Value_ptr(new Real(((Vector *)x.get())->size()));
+    return std::make_shared<Real>(((Vector *)x.get())->size());
   if (typeid(*x) == typeid(CVector))
-    return Value_ptr(new Real(((CVector *)x.get())->size()));
-
+    return std::make_shared<Real>(((CVector *)x.get())->size());
   if (typeid(*x) == typeid(Matrix)) {
-    std::vector<Value_ptr> *lst = new std::vector<Value_ptr>(2);
-    (*lst)[0] = Value_ptr(new Real(((Matrix *)x.get())->rows()));
-    (*lst)[1] = Value_ptr(new Real(((Matrix *)x.get())->cols()));
-    return Value_ptr(new List(list_ptr(lst), std::slice(0, 2, 1)));
+    auto lst = std::make_shared<std::vector<Value_ptr>>(2);
+    (*lst)[0] = std::make_shared<Real>(((Matrix *)x.get())->rows());
+    (*lst)[1] = std::make_shared<Real>(((Matrix *)x.get())->cols());
+    return std::make_shared<List>(list_ptr(lst), std::slice(0, 2, 1));
   }
-  
-  // some more types go here
-  
+  if (typeid(*x) == typeid(CMatrix)) {
+    auto lst = std::make_shared<std::vector<Value_ptr>>(2);
+    (*lst)[0] = std::make_shared<Real>(((CMatrix *)x.get())->rows());
+    (*lst)[1] = std::make_shared<Real>(((CMatrix *)x.get())->cols());
+    return std::make_shared<List>(list_ptr(lst), std::slice(0, 2, 1));
+  }
   if (typeid(*x) == typeid(String)) {
     String *u = (String *)x.get();
     std::slice s = u->index();
-    return Value_ptr(new Real(s.size()));
+    return std::make_shared<Real>(s.size());
   }
   if (typeid(*x) == typeid(List)) {
     List *u = (List *)x.get();
     std::slice s = u->index();
-    return Value_ptr(new Real(s.size()));
+    return std::make_shared<Real>(s.size());
   }
-  mpl_error("type error");
-  return 0;
+  // that should cover everything, but just in case...
+  mpl_error("type error in size function");
 }
 
 Value_ptr mpl_exit() {
@@ -287,41 +276,39 @@ Value_ptr mpl_exit() {
     Real *xx = (Real *)x.get();
     exit(round(xx->value()));
   }
-  mpl_error("type error");
-  return 0;
+  mpl_error("type error in exit function"); // lost cause?
 }
 
 Value_ptr mpl_read() {
   std::string line;
   std::getline(std::cin, line);
-  return Value_ptr(new String(line));
+  return std::make_shared<String>(line);
 }
 
 Value_ptr mpl_eof() {
-  return Value_ptr(new Real(std::cin.eof()));
+  return std::make_shared<Real>(std::cin.eof());
 }
 
 Value_ptr mpl_type() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real))
-    return Value_ptr(new Real(1.0));
+    return std::make_shared<Real>(1.0);
   if (typeid(*x) == typeid(Complex))
-    return Value_ptr(new Real(2.0));
+    return std::make_shared<Real>(2.0);
   if (typeid(*x) == typeid(Vector))
-    return Value_ptr(new Real(3.0));
+    return std::make_shared<Real>(3.0);
   if (typeid(*x) == typeid(CVector))
-    return Value_ptr(new Real(4.0));
+    return std::make_shared<Real>(4.0);
   if (typeid(*x) == typeid(Matrix))
-    return Value_ptr(new Real(5.0));
+    return std::make_shared<Real>(5.0);
   if (typeid(*x) == typeid(CMatrix))
-    return Value_ptr(new Real(6.0));
+    return std::make_shared<Real>(6.0);
   if (typeid(*x) == typeid(String))
-    return Value_ptr(new Real(7.0));
+    return std::make_shared<Real>(7.0);
   if (typeid(*x) == typeid(List))
-    return Value_ptr(new Real(8.0));
-  std::cout << "internal error: illegal type" << std::endl;
-  exit(1);
-  return 0;
+    return std::make_shared<Real>(8.0);
+  // should never get here
+  mpl_error("illegal type in type function");
 }
 
 Value_ptr mpl_ascii() {
@@ -329,29 +316,27 @@ Value_ptr mpl_ascii() {
   if (typeid(*x) == typeid(String)) {
     String *xx = (String *)x;
     if (xx->index().size() == 0)
-      return Value_ptr(new Real(0.0));
+      return std::make_shared<Real>(0.0);
     int c = (*xx->data())[xx->index().start()];
-    return Value_ptr(new Real(c));
+    return std::make_shared<Real>(c);
   }
   mpl_error("type error");
-  return 0;
 }
 
 Value_ptr mpl_char() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     std::string s(1, (char)round(((Real *)x)->value()));
-    return Value_ptr(new String(s));
+    return std::make_shared<String>(s);
   }
   mpl_error("type error in char()");
-  return 0;
 }  
 
 std::default_random_engine generator;
 
 Value_ptr mpl_random() {
   std::uniform_real_distribution<double> distribution(0.0, 1.0);
-  return Value_ptr(new Real(distribution(generator)));
+  return std::make_shared<Real>(distribution(generator));
 }
 
 Value_ptr mpl_randomize() {
@@ -364,407 +349,351 @@ Value_ptr mpl_floor() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(floor(u->value())));
+    return std::make_shared<Real>(floor(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in floor function");
 }
 
 Value_ptr mpl_ceil() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(ceil(u->value())));
+    return std::make_shared<Real>(ceil(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in ceil function");
 }
 
 Value_ptr mpl_round() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(floor(u->value()+0.5)));
+    return std::make_shared<Real>(floor(u->value()+0.5));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in round function");
 }
 
 Value_ptr mpl_real() {
   Value *x = value(read_memory(frame_pointer)).get();
-  if (typeid(*x) != typeid(Complex)) {
-    std::cout << "type error" << std::endl;
-    exit(1);
+  if (typeid(*x) == typeid(Complex)) {
+    Complex *u = (Complex *)x;
+    return std::make_shared<Real>(u->value().real());
   }
-  Complex *u = (Complex *)x;
-  return Value_ptr(new Real(u->value().real()));
+  mpl_error("type error in real function");
 }
 
 Value_ptr mpl_imag() {
   Value *x = value(read_memory(frame_pointer)).get();
-  if (typeid(*x) != typeid(Complex)) {
-    std::cout << "type error" << std::endl;
-    exit(1);
+  if (typeid(*x) == typeid(Complex)) {
+    Complex *u = (Complex *)x;
+    return std::make_shared<Real>(u->value().imag());
   }
-  Complex *u = (Complex *)x;
-  return Value_ptr(new Real(u->value().imag()));
+  mpl_error("type error in imag function");
 }
 
 Value_ptr mpl_abs() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(abs(u->value())));
+    return std::make_shared<Real>(abs(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Real(abs(u->value())));
+    return std::make_shared<Real>(abs(u->value()));
   }
-  std::cout << "type error" << std::endl;
-  exit(1);
-  return 0;
+  mpl_error("type error in abs function");
 }
 
 Value_ptr mpl_arg() {
   Value *x = value(read_memory(frame_pointer)).get();
-  if (typeid(*x) != typeid(Complex)) {
-    std::cout << "type error" << std::endl;
-    exit(1);
-  }
-  Complex *u = (Complex *)x;
-  return Value_ptr(new Real(arg(u->value())));
+  if (typeid(*x) == typeid(Complex)) {
+    Complex *u = (Complex *)x;
+    return std::make_shared<Real>(arg(u->value()));
+  }    
+  mpl_error("type error arg function");
 }
 
 Value_ptr mpl_norm() {
   Value *x = value(read_memory(frame_pointer)).get();
-  if (typeid(*x) != typeid(Complex)) {
-    std::cout << "type error" << std::endl;
-    exit(1);
+  if (typeid(*x) == typeid(Complex)) {
+    Complex *u = (Complex *)x;
+    return std::make_shared<Real>(norm(u->value()));
   }
-  Complex *u = (Complex *)x;
-  return Value_ptr(new Real(norm(u->value())));
+  mpl_error("type error in norm function");
 }
 
 Value_ptr mpl_conj() {
   Value *x = value(read_memory(frame_pointer)).get();
-  if (typeid(*x) != typeid(Complex)) {
-    std::cout << "type error" << std::endl;
-    exit(1);
-  }
-  Complex *u = (Complex *)x;
-  return Value_ptr(new Complex(conj(u->value())));
+  if (typeid(*x) == typeid(Complex)) {
+    Complex *u = (Complex *)x;
+    return std::make_shared<Complex>(conj(u->value()));
+  }  
+  mpl_error("type error in conj function");
 }
 
 Value_ptr mpl_polar() {
   Value *x = value(read_memory(frame_pointer)).get();
   Value *y = value(read_memory(frame_pointer+1)).get();
-  if (typeid(*x) != typeid(Real)  || typeid(*y) != typeid(Real)) {
-    std::cout << "type error" << std::endl;
-    exit(1);
+  if (typeid(*x) == typeid(Real) && typeid(*y) == typeid(Real)) {
+    Real *u = (Real *)x;
+    Real *v = (Real *)y;
+    return std::make_shared<Complex>(std::polar(u->value(), v->value()));
   }
-  Real *u = (Real *)x;
-  Real *v = (Real *)y;
-  return Value_ptr(new Complex(std::polar(u->value(), v->value())));
+  mpl_error("type error  in polar function");
 }
 
 Value_ptr mpl_sqrt() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(sqrt(u->value())));
+    return std::make_shared<Real>(sqrt(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(sqrt(u->value())));
+    return std::make_shared<Complex>(sqrt(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in sqrt function");
 }
 
 Value_ptr mpl_exp() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(exp(u->value())));
+    return std::make_shared<Real>(exp(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(exp(u->value())));
+    return std::make_shared<Complex>(exp(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in exp function");
 }
 
 Value_ptr mpl_expm1() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(expm1(u->value())));
+    return std::make_shared<Real>(expm1(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in expm1 function");
 }
 
 Value_ptr mpl_log() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(log(u->value())));
+    return std::make_shared<Real>(log(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(log(u->value())));
+    return std::make_shared<Complex>(log(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in log function");
 }
 
 Value_ptr mpl_log1p() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(log1p(u->value())));
+    return std::make_shared<Real>(log1p(u->value()));
   }
-  std::cout << typeid(x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in log1p function");
 }
 
 Value_ptr mpl_log10() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(log10(u->value())));
+    return std::make_shared<Real>(log10(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(log10(u->value())));
+    return std::make_shared<Complex>(log10(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in log10 function");
 }
 
 Value_ptr mpl_sin() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(sin(u->value())));
+    return std::make_shared<Real>(sin(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(sin(u->value())));
+    return std::make_shared<Complex>(sin(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in sin function");
 }
 
 Value_ptr mpl_cos() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(cos(u->value())));
+    return std::make_shared<Real>(cos(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(cos(u->value())));
+    return std::make_shared<Complex>(cos(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in cos function");
 }
-
 
 Value_ptr mpl_tan() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(tan(u->value())));
+    return std::make_shared<Real>(tan(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(tan(u->value())));
+    return std::make_shared<Complex>(tan(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in tan function");
 }
 
 Value_ptr mpl_asin() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(asin(u->value())));
+    return std::make_shared<Real>(asin(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(asin(u->value())));
+    return std::make_shared<Complex>(asin(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in asin function");
 }
 
 Value_ptr mpl_acos() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(acos(u->value())));
+    return std::make_shared<Real>(acos(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(acos(u->value())));
+    return std::make_shared<Complex>(acos(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in acos function");
 }
 
 Value_ptr mpl_atan() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(atan(u->value())));
+    return std::make_shared<Real>(atan(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(atan(u->value())));
+    return std::make_shared<Complex>(atan(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in atan function");
 }
 
 Value_ptr mpl_atan2() {
   Value *x = value(read_memory(frame_pointer)).get();
   Value *y = value(read_memory(frame_pointer+1)).get();
-  if (typeid(*x) != typeid(Real)  || typeid(*y) != typeid(Real)) {
-    std::cout << "type error" << std::endl;
-    exit(1);
+  if (typeid(*x) == typeid(Real) && typeid(*y) == typeid(Real)) {
+    Real *u = (Real *)x;
+    Real *v = (Real *)y;
+    return std::make_shared<Real>(atan2(u->value(), v->value()));
   }
-  Real *u = (Real *)x;
-  Real *v = (Real *)y;
-  return Value_ptr(new Real(atan2(u->value(), v->value())));
+  mpl_error("type error in atan2 function");
 }
 
 Value_ptr mpl_sinh() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(sinh(u->value())));
+    return std::make_shared<Real>(sinh(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(sinh(u->value())));
+    return std::make_shared<Complex>(sinh(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in sinh function");
 }
 
 Value_ptr mpl_cosh() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(cosh(u->value())));
+    return std::make_shared<Real>(cosh(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(cosh(u->value())));
+    return std::make_shared<Complex>(cosh(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in cosh function");
 }
 
 Value_ptr mpl_tanh() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(tanh(u->value())));
+    return std::make_shared<Real>(tanh(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(tanh(u->value())));
+    return std::make_shared<Complex>(tanh(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in tanh function");
 }
 
 Value_ptr mpl_asinh() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(asinh(u->value())));
+    return std::make_shared<Real>(asinh(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(asinh(u->value())));
+    return std::make_shared<Complex>(asinh(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in asinh function");
 }
 
 Value_ptr mpl_acosh() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(acosh(u->value())));
+    return std::make_shared<Real>(acosh(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(acosh(u->value())));
+    return std::make_shared<Complex>(acosh(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in acosh function");
 }
 
 Value_ptr mpl_atanh() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(atanh(u->value())));
+    return std::make_shared<Real>(atanh(u->value()));
   }
   if (typeid(*x) == typeid(Complex)) {
     Complex *u = (Complex *)x;
-    return Value_ptr(new Complex(atanh(u->value())));
+    return std::make_shared<Complex>(atanh(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in atanh function");
 }
 
 Value_ptr mpl_gamma() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(tgamma(u->value())));
+    return std::make_shared<Real>(tgamma(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in gamma function");
 }
 
 Value_ptr mpl_lgamma() {
   Value *x = value(read_memory(frame_pointer)).get();
   if (typeid(*x) == typeid(Real)) {
     Real *u = (Real *)x;
-    return Value_ptr(new Real(lgamma(u->value())));
+    return std::make_shared<Real>(lgamma(u->value()));
   }
-  std::cout << typeid(*x).name() << std::endl;
-  std::cout << "type error" << std::endl;
-  exit(1);
+  mpl_error("type error in lgamma function");
 }
 
 Value_ptr mpl_tr() {

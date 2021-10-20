@@ -27,7 +27,7 @@ Value_ptr dolist(List *u, Doit1 *func) {
   auto w = new std::vector<Value_ptr>(n);
   for (int i = 0; i < n; i++)
     (*w)[i] = func((*data)[index.stride()*i + index.start()].get());
-  return Value_ptr(new List(list_ptr(w), std::slice(0, n, 1)));
+  return std::make_shared<List>(list_ptr(w), std::slice(0, n, 1));
 }
 
 // generic binary operations with lists
@@ -46,7 +46,7 @@ Value_ptr dolist(Value *u, Value *v, Doit2 *func) {
 	int k = (i%vindex.size())*vindex.stride() + vindex.start();
 	(*w)[i] = func((*udata)[j].get(), (*vdata)[k].get());
       }
-      return Value_ptr(new List(list_ptr(w), std::slice(0, n, 1)));
+      return std::make_shared<List>(list_ptr(w), std::slice(0, n, 1));
     }
     else {
       std::slice index =  ((List *)u)->index();
@@ -54,7 +54,7 @@ Value_ptr dolist(Value *u, Value *v, Doit2 *func) {
       auto w = new std::vector<Value_ptr>(index.size());
       for (int i = 0, j = index.start(); i < (int)index.size(); i++, j += index.stride())
 	(*w)[i] = func((*data)[j].get(), v);
-      return Value_ptr(new List(list_ptr(w), std::slice(0, index.size(), 1)));
+      return std::make_shared<List>(list_ptr(w), std::slice(0, index.size(), 1));
     }
   }
   else if (typeid(*v) == typeid(List)) {
@@ -63,10 +63,9 @@ Value_ptr dolist(Value *u, Value *v, Doit2 *func) {
     auto w = new std::vector<Value_ptr>(index.size());
     for (int i = 0, j = index.start(); i < (int)index.size(); i++, j += index.stride())
       (*w)[i] = func(u, (*data)[j].get());
-    return Value_ptr(new List(list_ptr(w), std::slice(0, index.size(), 1)));
+    return std::make_shared<List>(list_ptr(w), std::slice(0, index.size(), 1));
   }
   mpl_error("interanl error");
-  return 0;
 }
 
 Real *logic_or(Real *u, Real *v) {
