@@ -17,7 +17,7 @@
 
 const std::string stdlib = "/usr/local/share/mpl/stdlib.mpl";
 
-std::stack<std::istream *> file_stack;
+std::stack<File_Pointer> file_stack;
 
 Token_List *tokens = 0;
 
@@ -155,8 +155,6 @@ std::string read_line() {
 	return line;
       if (file_stack.top()->good())
 	break;
-      if (file_stack.top() != &std::cin) // don't delete cin!
-	delete file_stack.top();
       file_stack.pop();
     }
 
@@ -794,15 +792,17 @@ void initialize_builtin_functions() {
 int main(int argc, char **argv) {
   trace_flag = false;
   initialize_builtin_functions();
-  file_stack.push(new std::ifstream(stdlib));
+
+  file_stack.push(File_Pointer(new std::ifstream(stdlib)));
+
   command_loop();
   if (argc == 1) {
-    file_stack.push(&std::cin);
+    file_stack.push(File_Pointer(&std::cin));
     command_loop();
   }
   else {
     for (int i = 1; i < argc; i++) {
-      file_stack.push(new std::ifstream(argv[i]));
+      file_stack.push(File_Pointer(new std::ifstream(argv[i])));
       if (file_stack.top()->good())
 	command_loop();
       else {

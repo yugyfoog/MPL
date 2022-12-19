@@ -4,7 +4,16 @@ extern int locals;
 extern int stack_pointer;
 extern int frame_pointer;
 
-extern std::stack<std::istream *> file_stack;
+struct File_Deleter {
+  void operator() (std::istream *f) {
+    if (f != &std::cin)
+      delete f;
+  }
+};
+
+typedef std::unique_ptr<std::istream, File_Deleter> File_Pointer;
+
+extern std::stack<File_Pointer> file_stack;
 
 class Value;
 class Code;

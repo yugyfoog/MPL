@@ -58,7 +58,7 @@ Value_ptr Include::execute() {
     std::cout << "unable to open " << s << std::endl;
     exit(1);
   }
-  file_stack.push(new std::ifstream(s));
+  file_stack.push(File_Pointer(new std::ifstream(s)));
   return 0;
 }
 
