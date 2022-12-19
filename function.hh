@@ -1,3 +1,7 @@
+class Function;
+
+typedef std::unique_ptr<Function> Function_Pointer;
+
 class Function {
 public:
   virtual ~Function();

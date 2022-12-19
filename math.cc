@@ -12,6 +12,8 @@
 #include <numeric>
 #include <cmath>
 #include "value.hh"
+#include "code.hh"
+#include "function.hh"
 #include "math.hh"
 #include "mpl.hh"
 

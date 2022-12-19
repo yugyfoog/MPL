@@ -323,11 +323,11 @@ Value_ptr Range::execute() {
 }
 
 Value_ptr Call::execute() {
-  Function *f = function_table[func];
-  if (f == 0) {
+  if (function_table.count(func) == 0) {
     std::cout << func << " is not defined" << std::endl;
     exit(1);
   }
+  
   int save_frame_pointer = frame_pointer;
   int save_stack_pointer = stack_pointer;
   if (args)
@@ -338,7 +338,7 @@ Value_ptr Call::execute() {
   if (trace_flag)
     std::cout << ">" << func << std::endl;
   
-  Value_ptr rv = f->execute(stack_pointer-frame_pointer);
+  Value_ptr rv = function_table[func]->execute(stack_pointer-frame_pointer);
 
   if (trace_flag)
     std::cout << "<" << func << std::endl;

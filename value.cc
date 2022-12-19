@@ -10,6 +10,8 @@
 #include <memory>
 #include <typeinfo>
 #include "value.hh"
+#include "code.hh"
+#include "function.hh"
 #include "mpl.hh"
 
 std::string Real::print() const {

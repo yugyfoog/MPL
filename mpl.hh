@@ -21,12 +21,13 @@ class Function;
 
 typedef std::list<std::string const *> Token_List;
 
-typedef std::map<std::string,int> Symbol_Table;
-typedef std::map<std::string,Function *> Function_Table;
+typedef std::map<std::string, int> Symbol_Table;
+typedef std::map<std::string, Function_Pointer> Function_Table;
 
 extern Symbol_Table local_symbol_table;
 extern Symbol_Table global_symbol_table;
-extern Function_Table function_table;
+extern std::map<std::string, Function_Pointer> function_table;
+//extern Function_Table function_table;
 
 extern bool trace_flag;
 

@@ -689,8 +689,7 @@ Code *define_function() {
   // print_code(body);
   need("end");
   line_end();
-  delete function_table[id];
-  function_table[id] = new User_Function(params, locals-params, body);
+  function_table[id] = Function_Pointer(new User_Function(params, locals-params, body));
   local_symbol_table.clear();
   in_function = false;
   return 0;
@@ -729,64 +728,64 @@ void command_loop() {
 }
 
 void initialize_builtin_functions() {
-  function_table["matvec"] = new Builtin_Function(1, mpl_matvec);
-  function_table["stor"] = new Builtin_Function(1, mpl_stor);
-  function_table["gfmt"] = new Builtin_Function(1, mpl_gfmt);
-  function_table["ffmt"] = new Builtin_Function(2, mpl_ffmt);
-  function_table["sfmt"] = new Builtin_Function(2, mpl_sfmt);
-  function_table["hfmt"] = new Builtin_Function(1, mpl_hfmt);
-  function_table["exit"] = new Builtin_Function(1, mpl_exit);
-  function_table["list"] = new Builtin_Function(1, mpl_list);
-  function_table["vector"] = new Builtin_Function(1, mpl_vector);
-  function_table["cvector"] = new Builtin_Function(1, mpl_cvector);
-  function_table["matrix"] = new Builtin_Function(2, mpl_matrix);
-  function_table["cmatrix"] = new Builtin_Function(2, mpl_cmatrix);
-  function_table["size"] = new Builtin_Function(1, mpl_size);
-  function_table["concat"] = new Builtin_Function(2, mpl_concat);
-  function_table["read"] = new Builtin_Function(0, mpl_read);
-  function_table["eof"] = new Builtin_Function(0, mpl_eof);
-  function_table["type"] = new Builtin_Function(1, mpl_type);
-  function_table["ascii"] = new Builtin_Function(1, mpl_ascii);
-  function_table["char"] = new Builtin_Function(1, mpl_char);
-  function_table["floor"] = new Builtin_Function(1, mpl_floor);
-  function_table["ceil"] = new Builtin_Function(1, mpl_ceil);
-  function_table["round"] = new Builtin_Function(1, mpl_round);
-  function_table["random"] = new Builtin_Function(0, mpl_random);
-  function_table["randomize"] = new Builtin_Function(0, mpl_randomize);
-  function_table["real"] = new Builtin_Function(1, mpl_real);
-  function_table["imag"] = new Builtin_Function(1, mpl_imag);
-  function_table["abs"] = new Builtin_Function(1, mpl_abs);
-  function_table["arg"] = new Builtin_Function(1, mpl_arg);
-  function_table["norm"] = new Builtin_Function(1, mpl_norm);
-  function_table["conj"] = new Builtin_Function(1, mpl_conj);
-  function_table["polar"] = new Builtin_Function(2, mpl_polar);
+  function_table["matvec"] = std::make_unique<Builtin_Function>(1, mpl_matvec);
+  function_table["stor"] = std::make_unique<Builtin_Function>(1, mpl_stor);
+  function_table["gfmt"] = std::make_unique<Builtin_Function>(1, mpl_gfmt);
+  function_table["ffmt"] = std::make_unique<Builtin_Function>(2, mpl_ffmt);
+  function_table["sfmt"] = std::make_unique<Builtin_Function>(2, mpl_sfmt);
+  function_table["hfmt"] = std::make_unique<Builtin_Function>(1, mpl_hfmt);
+  function_table["exit"] = std::make_unique<Builtin_Function>(1, mpl_exit);
+  function_table["list"] = std::make_unique<Builtin_Function>(1, mpl_list);
+  function_table["vector"] = std::make_unique<Builtin_Function>(1, mpl_vector);
+  function_table["cvector"] = std::make_unique<Builtin_Function>(1, mpl_cvector);
+  function_table["matrix"] = std::make_unique<Builtin_Function>(2, mpl_matrix);
+  function_table["cmatrix"] = std::make_unique<Builtin_Function>(2, mpl_cmatrix);
+  function_table["size"] = std::make_unique<Builtin_Function>(1, mpl_size);
+  function_table["concat"] = std::make_unique<Builtin_Function>(2, mpl_concat);
+  function_table["read"] = std::make_unique<Builtin_Function>(0, mpl_read);
+  function_table["eof"] = std::make_unique<Builtin_Function>(0, mpl_eof);
+  function_table["type"] = std::make_unique<Builtin_Function>(1, mpl_type);
+  function_table["ascii"] = std::make_unique<Builtin_Function>(1, mpl_ascii);
+  function_table["char"] = std::make_unique<Builtin_Function>(1, mpl_char);
+  function_table["floor"] = std::make_unique<Builtin_Function>(1, mpl_floor);
+  function_table["ceil"] = std::make_unique<Builtin_Function>(1, mpl_ceil);
+  function_table["round"] = std::make_unique<Builtin_Function>(1, mpl_round);
+  function_table["random"] = std::make_unique<Builtin_Function>(0, mpl_random);
+  function_table["randomize"] = std::make_unique<Builtin_Function>(0, mpl_randomize);
+  function_table["real"] = std::make_unique<Builtin_Function>(1, mpl_real);
+  function_table["imag"] = std::make_unique<Builtin_Function>(1, mpl_imag);
+  function_table["abs"] = std::make_unique<Builtin_Function>(1, mpl_abs);
+  function_table["arg"] = std::make_unique<Builtin_Function>(1, mpl_arg);
+  function_table["norm"] = std::make_unique<Builtin_Function>(1, mpl_norm);
+  function_table["conj"] = std::make_unique<Builtin_Function>(1, mpl_conj);
+  function_table["polar"] = std::make_unique<Builtin_Function>(2, mpl_polar);
 
-  function_table["sqrt"] = new Builtin_Function(1, mpl_sqrt);
-  function_table["exp"] = new Builtin_Function(1, mpl_exp);
-  function_table["expm1"] = new Builtin_Function(1, mpl_expm1);
+  function_table["sqrt"] = std::make_unique<Builtin_Function>(1, mpl_sqrt);
+  function_table["exp"] = std::make_unique<Builtin_Function>(1, mpl_exp);
+  function_table["expm1"] = std::make_unique<Builtin_Function>(1, mpl_expm1);
   
-  function_table["log"] = new Builtin_Function(1, mpl_log);
-  function_table["log1p"] = new Builtin_Function(1, mpl_log1p);
-  function_table["log10"] = new Builtin_Function(1, mpl_log10);
+  function_table["log"] = std::make_unique<Builtin_Function>(1, mpl_log);
+  function_table["log1p"] = std::make_unique<Builtin_Function>(1, mpl_log1p);
+  function_table["log10"] = std::make_unique<Builtin_Function>(1, mpl_log10);
   
-  function_table["sin"] = new Builtin_Function(1, mpl_sin);
-  function_table["cos"] = new Builtin_Function(1, mpl_cos);
-  function_table["tan"] = new Builtin_Function(1, mpl_tan);
-  function_table["asin"] = new Builtin_Function(1, mpl_asin);
-  function_table["acos"] = new Builtin_Function(1, mpl_acos);
-  function_table["atan"] = new Builtin_Function(1, mpl_atan);
-  function_table["atan2"] = new Builtin_Function(2, mpl_atan2);
-  function_table["sinh"] = new Builtin_Function(1, mpl_sinh);
-  function_table["cosh"] = new Builtin_Function(1, mpl_cosh);
-  function_table["tanh"] = new Builtin_Function(1, mpl_tanh);
-  function_table["asinh"] = new Builtin_Function(1, mpl_asinh);
-  function_table["acosh"] = new Builtin_Function(1, mpl_acosh);
-  function_table["atanh"] = new Builtin_Function(1, mpl_atanh);
+  function_table["sin"] = std::make_unique<Builtin_Function>(1, mpl_sin);
+  function_table["cos"] = std::make_unique<Builtin_Function>(1, mpl_cos);
+  function_table["tan"] = std::make_unique<Builtin_Function>(1, mpl_tan);
+  function_table["asin"] = std::make_unique<Builtin_Function>(1, mpl_asin);
+  function_table["acos"] = std::make_unique<Builtin_Function>(1, mpl_acos);
+  function_table["atan"] = std::make_unique<Builtin_Function>(1, mpl_atan);
+  function_table["atan2"] = std::make_unique<Builtin_Function>(2, mpl_atan2);
+  function_table["sinh"] = std::make_unique<Builtin_Function>(1, mpl_sinh);
+  function_table["cosh"] = std::make_unique<Builtin_Function>(1, mpl_cosh);
+  function_table["tanh"] = std::make_unique<Builtin_Function>(1, mpl_tanh);
+  function_table["asinh"] = std::make_unique<Builtin_Function>(1, mpl_asinh);
+  function_table["acosh"] = std::make_unique<Builtin_Function>(1, mpl_acosh);
+  function_table["atanh"] = std::make_unique<Builtin_Function>(1, mpl_atanh);
 
-  function_table["gamma"] = new Builtin_Function(1, mpl_gamma);
-  function_table["lgamma"] = new Builtin_Function(1, mpl_lgamma);
+  function_table["gamma"] = std::make_unique<Builtin_Function>(1, mpl_gamma);
+  function_table["lgamma"] = std::make_unique<Builtin_Function>(1, mpl_lgamma);
 
-  function_table["tr"] = new Builtin_Function(1, mpl_tr);
+  function_table["tr"] = std::make_unique<Builtin_Function>(1, mpl_tr);
 }
 
 int main(int argc, char **argv) {
