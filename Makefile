@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -Wextra -g
+CXXFLAGS = -Wall -Wextra -g -Ofast -march=native 
 
 OBJS = mpl.o value.o code.o math.o function.o
 

@@ -19,7 +19,7 @@ function error(a, b, s)
     a
     b
     a-b
-    exit(1)
+    ~exit(1)
 end
 
 function test(a, b, s)

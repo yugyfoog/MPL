@@ -135,8 +135,12 @@ Value_ptr mpl_hfmt() {
   if (typeid(*x) != typeid(Real))
     mpl_error("type error in hfmt");
   std::ostringstream o;
-  double t = ((Real *)x)->value();
-  o << '#' << std::hex << *(unsigned long *)&t;
+  union {
+    unsigned long i;
+    double r;
+  } t;
+  t.r=((Real *)x)->value();
+  o << '#' << std::hex << *(unsigned long *)&t.i;
   return std::make_shared<String>(o.str());
 }
 

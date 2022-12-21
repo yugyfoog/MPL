@@ -19,8 +19,6 @@ class Value;
 class Code;
 class Function;
 
-typedef std::list<std::string const *> Token_List;
-
 typedef std::map<std::string, int> Symbol_Table;
 typedef std::map<std::string, Function_Pointer> Function_Table;
 

@@ -10,6 +10,7 @@
 #include <memory>
 #include <typeinfo>
 #include <cctype>
+#include <regex>
 #include "value.hh"
 #include "code.hh"
 #include "function.hh"
@@ -17,9 +18,12 @@
 
 const std::string stdlib = "/usr/local/share/mpl/stdlib.mpl";
 
-std::stack<File_Pointer> file_stack;
+typedef std::string Token;
+typedef std::deque<Token> Token_List;
 
-Token_List *tokens = 0;
+std::stack<File_Pointer> file_stack;
+std::stack<std::string> file_name_stack;
+std::stack<int> file_line_stack;
 
 bool in_function = false;
 int locals = 0;
@@ -34,7 +38,10 @@ Function_Table function_table;
 bool trace_flag;
 
 [[ noreturn ]] void mpl_error(std::string const &s) {
-  std::cout << "error: " << s << std::endl;
+  std::cout << "error: "
+            << file_name_stack.top() << ": "
+            << file_line_stack.top() << ": "
+            << s << std::endl;
   exit(1);
 }
 
@@ -156,11 +163,14 @@ std::string read_line() {
       if (file_stack.top()->good())
 	break;
       file_stack.pop();
+      file_name_stack.pop();
+      file_line_stack.pop();
     }
 
     // now read
     
     std::getline(*file_stack.top(), next);
+    file_line_stack.top()++;
     continuation = scan_line(next);
     line += next;
   } while (continuation);
@@ -175,256 +185,264 @@ bool is_id_char(int c) {
   return isalnum(c) || c == '_' || c == '$';
 }
 
-bool is_identifier() {
-  if (tokens->empty())
+const std::regex identifier_pattern("[A-Za-z_$][A-Za-z0-9_$]*");
+
+bool check_identifier(Token_List const &tokens) {
+  if (tokens.empty())
     return false;
-  if (is_id_startchar((*tokens->front())[0]))
-    return true;
-  return false;
+  return std::regex_match(tokens.front(), identifier_pattern);
 }
 
-bool is_number() {
-  if (tokens->empty())
+const std::regex number_pattern("([0-9]+|([0-9]*\\.[0-9]+)([Ee][+-]?[0-9]+)?)|(#[0-9A-Fa-f]+)");
+
+bool check_number(Token_List const &tokens) {
+  if (tokens.empty())
     return false;
-  int c = (*tokens->front())[0];
-  return isdigit(c) || c == '#' || c== '.';
+  return std::regex_match(tokens.front(), number_pattern);
 }
 
-bool is_string() {
-  if (tokens->empty())
+const std::regex string_pattern("\"([^\"]|\\\\\")*\"");
+
+bool check_string(Token_List const &tokens) {
+  if (tokens.empty())
     return false;
-  return (*tokens->front())[0] == '"';
+  return std::regex_match(tokens.front(), string_pattern);
 }
 
-Token_List *tokenize(std::string const &line) {
-  auto tkns = new Token_List();
+bool is_id_start_character(int c) {
+  return isalpha(c) || c == '_' || c == '$';
+}
+
+bool is_id_character(int c) {
+  return isalnum(c) || c == '_' || c == '$';
+}
+
+std::unique_ptr<Token_List> tokenize(std::string const &line) {
+  auto tokens = std::make_unique<Token_List>();
   std::string s;
-  for (auto p = line.begin(); p != line.end();) {
-    if (!isgraph(*p))
+
+  auto p = line.begin();
+  while (p != line.end()) {
+    if (!isgraph(*p)) {  
+      // skip whitespace
       p++;
-    else if (is_id_startchar(*p)) {
+    }
+    else if (is_id_start_character(*p)) {
+      // identifier
       s += *p++;
-      while (is_id_char(*p))
-	s += *p++;
-      tkns->push_back(new std::string(s));
-      s.clear();
+      while (is_id_character(*p))
+        s += *p++;
+      // std::cout << "<" << s << ">" << std::endl;
+      tokens->push_back(move(s));
     }
     else if (isdigit(*p) || *p == '.') {
+      // number or '.'
       while (isdigit(*p))
-	s += *p++;
+        s += *p++;
       if (*p == '.') {
-	s += *p++;
-	while (isdigit(*p))
-	  s += *p++;
+        s += *p++;
+        while (isdigit(*p))
+          s += *p++;
       }
       if (toupper(*p) == 'E') {
-	s += *p++;
-	if (*p == '+' || *p == '-')
-	  s += *p++;
-	while (isdigit(*p))
-	  s += *p++;
+        s += *p++;
+        if (*p == '+' || *p == '-')
+          s += *p++;
+        while (isdigit(*p))
+          s += *p++;
       }
-      tkns->push_back(new std::string(s));
-      s.clear();
+      // std::cout << "<" << s << ">" << std::endl;  
+      tokens->push_back(move(s));
     }
     else if (*p == '#') {
+      // hex number
       s += *p++;
       while (isxdigit(*p))
-	s += *p++;
-      tkns->push_back(new std::string(s));
-      s.clear();
+        s += *p++;
+      // std::cout << "<" << s << ">" << std::endl;
+      tokens->push_back(move(s));
     }
-    else if (*p == '\"') {
+    else if (*p == '"') {
+      // string
       s += *p++;
       while (p != line.end() && *p != '"') {
-	if (*p == '\\') {
-	  s += *p++;
-	  if (p != line.end())
-	    s += *p++;
-	}
-	else
-	  s += *p++;
+        if (*p == '\\') {
+          s += *p++;
+          if (p == line.end()) // clean_line() should prevents this, but check anyway
+            s += '"';
+          else
+            s += *p++;
+        }
+        else
+          s += *p++;
       }
-      if (*p == '"')
-	s += *p++;
-      else
-	s += '"';
-      tkns->push_back(new std::string(s));
-      s.clear();
+      if (p == line.end())
+        mpl_error("missing \"");
+      s += *p++;
+      // std::cout << "<" << s << ">" << std::endl;
+      tokens->push_back(move(s));
     }
     else {
+      // character symbol
       char c = *p++;
       s += c;
       if (p != line.end()) {
-	if (c == '=' && *p == '=')
-	  s += *p++;
-	else if (c == '!' && *p == '=')
-	  s += *p++;
-	else if (c == '<' && *p == '=')
-	  s += *p++;
-	else if (c == '>' && *p == '=')
-	  s += *p++;
+        if (*p == '='
+            && (c == '='
+                || c == '!'
+                || c == '<'
+                || c == '>'))
+          s += *p++;
       }
-      tkns->push_back(new std::string(s));
-      s.clear();
+      // std::cout << "<" << s << ">" << std::endl;
+      tokens->push_back(move(s));
     }
   }
-  return tkns;
+  return tokens;
 }
 
-void next_line() {
-  std::string line = read_line();
-  tokens = tokenize(line);
+void line_end(Token_List &tokens) {
+  if (!tokens.empty())
+    mpl_error("syntax error near " + tokens.front());
 }
 
-bool at_end_line() {
-  return tokens->empty();
-}
-
-void line_end() {
-  if (!at_end_line()) {
-    std::cout << "syntax error at " << *tokens->front() << std::endl;
-    exit(1);
-  }
-}
-
-void next_token() {
-  delete tokens->front();
-  tokens->pop_front();
-}
-
-bool check(std::string const &s) {
-  if (tokens->empty()) // tokens will be empty if we are at the end of the line
+bool check(Token_List const &tokens, std::string const &s) {
+  if (tokens.empty())
     return false;
-  return *tokens->front() == s;
+  return tokens.front() == s;
 }
 
-bool match(std::string const &s) {
-  if (check(s)) {
-    next_token();
+bool match(Token_List &tokens, std::string const &s) {
+  if (check(tokens, s)) {
+    tokens.pop_front();
     return true;
   }
   return false;
 }
 
-void need(std::string const &s) {
-  if (check(s))
-    next_token();
-  else {
-    if (tokens->front())
-      std::cout << "syntax error: " << s << " expected near " << *tokens->front() << std::endl;
+void need(Token_List &tokens, std::string const &s) {
+  if (!match(tokens, s)) {
+    if (tokens.empty())
+      mpl_error("missing " + s);
     else
-      std::cout << "syntax error: " << s << " expected" << std::endl;
-    exit(1);
+      mpl_error("missing " + s + " near " + tokens.front());
   }
 }
 
-std::string identifier() {
-  std::string s = *tokens->front();
-  next_token();
-  return s;
+std::string identifier(Token_List &tokens) {
+  if (tokens.empty()) {
+    mpl_error("missing identifier");
+    return "";
+  }
+  if (!check_identifier(tokens)) {
+    mpl_error("missing identifier near " + tokens.front());
+    return "";
+  }
+  std::string rv = tokens.front();
+  tokens.pop_front();
+  return rv;
 }
 
-Code *expression();
+Code *expression(Token_List &tokens);
 
 // xlist() -- list, vector, or row of a matrix (not empty)
 
-Code *xlist() {
-  Code *x = expression();
-  if (match(","))
-    return new ListPart(x, xlist());
+Code *xlist(Token_List &tokens) {
+  Code *x = expression(tokens);
+  if (match(tokens, ","))
+    return new ListPart(x, xlist(tokens));
   return new ListPart(x, 0);
 }
 
 // rows of a matrix
 
-Code *yylist() {
-  Code *x = xlist();
-  if (at_end_line()) {
+Code *yylist(Token_List &tokens) {
+  Code *x = xlist(tokens);
+  if (tokens.empty()) {
     do
-      next_line();
-    while (at_end_line());
-    return new ListPart(x, yylist());
+      tokens = *tokenize(read_line()).get(); // endless loop if missing extra lines at end of file
+    while (tokens.empty());
+    return new ListPart(x, yylist(tokens));
   }
-  if (match("|"))
-    return new ListPart(x, yylist());
+  if (match(tokens, "|"))
+    return new ListPart(x, yylist(tokens));
   return new ListPart(x, 0);
 }
 
 // ylist() -- either a vector or a matrix
 
-Code *ylist() {
-  Code *x = xlist();
-  if (at_end_line()) {
+Code *ylist(Token_List &tokens) {
+  Code *x = xlist(tokens);
+  if (tokens.empty()) {
     do
-      next_line();
-    while (at_end_line());
-    return new ListPart(x, yylist());
+      tokens = *tokenize(read_line()).get(); // endless loop if missing extra lines at end of file
+    while (tokens.empty());
+    return new ListPart(x, yylist(tokens));
   }
-  if (match("|"))
-    return new ListPart(x, yylist());
+  if (match(tokens, "|"))
+    return new ListPart(x, yylist(tokens));
   return x;
 }
 
-Code *parameters() {
-  Code *param = expression();
-  if (match(","))
-    return new Parameter(param, parameters());
+Code *parameters(Token_List &tokens) {
+  Code *param = expression(tokens);
+  if (match(tokens, ","))
+    return new Parameter(param, parameters(tokens));
   return new Parameter(param, 0);
 }
 
-Code *range() {
+Code *range(Token_List &tokens) {
   Code *x;
   Code *y = 0;
   Code *z = 0;
 
-  x = expression();
-  if (match(":")) {
-    y = expression();
-    if (match(":"))
-      z = expression();
+  x = expression(tokens);
+  if (match(tokens, ":")) {
+    y = expression(tokens);
+    if (match(tokens, ":"))
+      z = expression(tokens);
     return new Range(x, y, z);
   }
   return x;
 }
 
-Code *primary_expression() {
+Code *primary_expression(Token_List &tokens) {
   Code *x;
   
-  if (match("(")) {
-    x = expression();
-    if (match(","))
-      x = new ComplexX(x, expression());
-    need(")");
+  if (match(tokens, "(")) {
+    x = expression(tokens);
+    if (match(tokens, ","))
+      x = new ComplexX(x, expression(tokens));
+    need(tokens, ")");
   }
-  else if (match("[")) {
-    x = ylist();
-    need("]");
+  else if (match(tokens, "[")) {
+    x = ylist(tokens);
+    need(tokens, "]");
     return new Call("matvec", new Parameter(x, 0));
   }
-  else if (match("{")) {
-    if (check("}"))
+  else if (match(tokens, "{")) {
+    if (check(tokens, "}"))
       x = new ListX(0); // empty list
     else
-      x = new ListX(xlist());
-    need("}");
+      x = new ListX(xlist(tokens));
+    need(tokens, "}");
   }
-  else if (is_number()) {
-    x = new RealX(*tokens->front());
-    next_token();
+  else if (check_number(tokens)) {
+    x = new RealX(tokens.front());
+    tokens.pop_front();
   }
-  else if (is_string()) {
-    x = new StringX(*tokens->front());
-    next_token();
+  else if (check_string(tokens)) {
+    x = new StringX(tokens.front());
+    tokens.pop_front();
   }
-  else if (is_identifier()) {
-    std::string id = identifier();
-    if (match("(")) {
-      if (match(")"))
+  else if (check_identifier(tokens)) {
+    std::string id = identifier(tokens);
+    if (match(tokens, "(")) {
+      if (match(tokens, ")"))
 	x = 0;
       else {
-	x = parameters();
-	need(")");
+	x = parameters(tokens);
+	need(tokens, ")");
       }
       x = new Call(id, x);
     }
@@ -432,63 +450,67 @@ Code *primary_expression() {
       x = new Variable(id);
       // only allow indexing after 
       for (;;) {
-	if (match("[")) {
-	  if (match(","))
-	    x = new ColumnIndex(x, range());
+	if (match(tokens, "[")) {
+	  if (match(tokens, ","))
+	    x = new ColumnIndex(x, range(tokens));
 	  else {
-	    Code *y = range();
-	    if (match(",")) {
-	      if (check("]"))
+	    Code *y = range(tokens);
+	    if (match(tokens, ",")) {
+	      if (check(tokens, "]"))
 		x = new RowIndex(x, y);
 	      else
-		x = new ColumnIndex(new RowIndex(x, y), range());
+		x = new ColumnIndex(new RowIndex(x, y), range(tokens));
 	    }
 	    else
 	      x = new Index(x, y);
 	  }
-	  need("]");
+	  need(tokens, "]");
 	}
 	else
 	  break;
       }
     }
   }
-  else
-    mpl_error("syntax error in expression");
+  else {
+    if (tokens.empty())
+      mpl_error("syntax error in expression");
+    else
+      mpl_error("syntax error in expression near " + tokens.front());
+  }
   return x;
 }
 
-Code *exponential_expression() {
-  Code *x = primary_expression();
-  if (match("^"))
-    return new Exponent(x, exponential_expression());
+Code *exponential_expression(Token_List &tokens) {
+  Code *x = primary_expression(tokens);
+  if (match(tokens, "^"))
+    return new Exponent(x, exponential_expression(tokens));
   return x;
 }
 
-Code *factor() {
-  if (match("-"))
-    return new Negate(factor());
-  return exponential_expression();
+Code *factor(Token_List &tokens) {
+  if (match(tokens, "-"))
+    return new Negate(factor(tokens));
+  return exponential_expression(tokens);
 }
 
-Code *term() {
-  Code *x = factor();
+Code *term(Token_List &tokens) {
+  Code *x = factor(tokens);
   for (;;) {
-    if (match("*"))
-      x = new Multiply(x, factor());
-    else if (match("/"))
-      x = new Divide(x, factor());
-    else if (match("div"))
-      x = new Floored_Divide(x, factor());
-    else if (match("mod"))
-      x = new Modulo(x, factor());
-    else if (match(".")) {
-      if (match("*"))
-	x = new Pointwise_Multiply(x, factor());
-      else if (match("/"))
-	 x = new Pointwise_Divide(x, factor());
+    if (match(tokens, "*"))
+      x = new Multiply(x, factor(tokens));
+    else if (match(tokens, "/"))
+      x = new Divide(x, factor(tokens));
+    else if (match(tokens, "div"))
+      x = new Floored_Divide(x, factor(tokens));
+    else if (match(tokens, "mod"))
+      x = new Modulo(x, factor(tokens));
+    else if (match(tokens, ".")) {
+      if (match(tokens, "*"))
+	x = new Pointwise_Multiply(x, factor(tokens));
+      else if (match(tokens, "/"))
+	 x = new Pointwise_Divide(x, factor(tokens));
       else
-	mpl_error("syntax error near " + *tokens->front());
+	mpl_error("syntax error near " + tokens.front());
     }
     else
       break;
@@ -496,175 +518,168 @@ Code *term() {
   return x;
 }
 
-Code *arithmetic_expression() {
-  Code *x = term();
+Code *arithmetic_expression(Token_List &tokens) {
+  Code *x = term(tokens);
   for (;;) {
-    if (match("+"))
-      x = new Add(x, term());
-    else if (match("-"))
-      x = new Subtract(x, term());
+    if (match(tokens, "+"))
+      x = new Add(x, term(tokens));
+    else if (match(tokens, "-"))
+      x = new Subtract(x, term(tokens));
     else
       break;
   }
   return x;
 }
 
-Code *relational_expression() {
-  Code *x = arithmetic_expression();
+Code *relational_expression(Token_List &tokens) {
+  Code *x = arithmetic_expression(tokens);
   for (;;) {
-    if (match("=="))
-      x = new EQ(x, arithmetic_expression());
-    else if (match("!="))
-      x = new NE(x, arithmetic_expression());
-    else if (match("<"))
-      x = new LT(x, arithmetic_expression());
-    else if (match("<="))
-      x = new LE(x, arithmetic_expression());
-    else if (match(">"))
-      x = new GT(x, arithmetic_expression());
-    else if (match(">="))
-      x = new GE(x, arithmetic_expression());
+    if (match(tokens, "=="))
+      x = new EQ(x, arithmetic_expression(tokens));
+    else if (match(tokens, "!="))
+      x = new NE(x, arithmetic_expression(tokens));
+    else if (match(tokens, "<"))
+      x = new LT(x, arithmetic_expression(tokens));
+    else if (match(tokens, "<="))
+      x = new LE(x, arithmetic_expression(tokens));
+    else if (match(tokens, ">"))
+      x = new GT(x, arithmetic_expression(tokens));
+    else if (match(tokens, ">="))
+      x = new GE(x, arithmetic_expression(tokens));
     else
       break;
   }
   return x;
 }
 
-Code *logical_factor() {
-  if (match("not"))
-    return new Not(logical_factor());
-  if (match("bnot"))
-    return new BNot(logical_factor());
-  return relational_expression();
+Code *logical_factor(Token_List &tokens) {
+  if (match(tokens, "not"))
+    return new Not(logical_factor(tokens));
+  if (match(tokens, "bnot"))
+    return new BNot(logical_factor(tokens));
+  return relational_expression(tokens);
 }
 
-Code *logical_term() {
-  Code *x = logical_factor();
+Code *logical_term(Token_List &tokens) {
+  Code *x = logical_factor(tokens);
   for (;;) {
-    if (match("and"))
-      x = new And(x, logical_factor());
-    else if (match("band"))
-      x = new BAnd(x, logical_factor());
+    if (match(tokens, "and"))
+      x = new And(x, logical_factor(tokens));
+    else if (match(tokens, "band"))
+      x = new BAnd(x, logical_factor(tokens));
     else
       break;
   }
   return x;
 }
 
-Code *expression() {
-  Code *x = logical_term();
+Code *expression(Token_List &tokens) {
+  Code *x = logical_term(tokens);
   for (;;) {
-    if (match("or"))
-      x = new Or(x, logical_term());
-    else if (match("bor"))
-      x = new BOr(x, logical_term());
-    else if (match("bxor"))
-      x = new BXor(x, logical_term());
+    if (match(tokens, "or"))
+      x = new Or(x, logical_term(tokens));
+    else if (match(tokens, "bor"))
+      x = new BOr(x, logical_term(tokens));
+    else if (match(tokens, "bxor"))
+      x = new BXor(x, logical_term(tokens));
     else
       break;
   }
   return x;
 }
 
-Code *print_or_assign() {
-  Code *code = expression();
-  if (match("="))
-    return new Assign(code, expression());
+Code *print_or_assign(Token_List &tokens) {
+  Code *code = expression(tokens);
+  if (match(tokens, "="))
+    return new Assign(code, expression(tokens));
   return new Print(code);
 }
 
-Code *statements();
+Code *statements(Token_List &tokens);
 
-Code *if_statement() {
-  Code *cond = expression();
-  need("then");
-  line_end();
-  Code *true_part = statements();
+Code *if_statement(Token_List &tokens) {
+  Code *cond = expression(tokens);
+  need(tokens, "then");
+  Code *true_part = statements(tokens);
   Code *false_part = 0;
-  if (match("else")) {
-    if (match("if"))
-      false_part = if_statement();
+  if (match(tokens, "else")) {
+    if (match(tokens, "if"))
+      false_part = if_statement(tokens);
     else {
-      line_end();
-      false_part = statements();
-      need("end");
+      false_part = statements(tokens);
+      need(tokens, "end");
     }
   }
   else
-    need("end");
-  line_end();
+    need(tokens, "end");
+  line_end(tokens);
   return new If(cond, true_part, false_part);
 }
 
-Code *while_statement() {
-  Code *cond = expression();
-  line_end();
-  Code *body = statements();
-  need("end");
-  line_end();
+Code *while_statement(Token_List &tokens) {
+  Code *cond = expression(tokens);
+  Code *body = statements(tokens);
+  need(tokens, "end");
+  line_end(tokens);
   return new While(cond, body);
 }
 
-Code *repeat_statement() {
-  line_end();
-  Code *body = statements();
-  need("until");
-  Code *cond = expression();
-  line_end();
+Code *repeat_statement(Token_List &tokens) {
+  Code *body = statements(tokens);
+  need(tokens, "until");
+  Code *cond = expression(tokens);
+  line_end(tokens);
   return new Repeat(cond, body);
 }
 
 // for var in range
 // for var in set
 
-Code *for_statement() {
-  if (!is_identifier())
-    mpl_error("syntax error in for statement");
-  Code *x = new Variable(identifier()); // no subscripts allowed!
-  need("in");
-  Code *y = range();
-  line_end();
-  Code *z = statements();
-  need("end");
-  line_end();
+Code *for_statement(Token_List &tokens) {
+  Code *x = new Variable(identifier(tokens)); // no subscripts allowed!
+  need(tokens, "in");
+  Code *y = range(tokens);
+  Code *z = statements(tokens);
+  need(tokens, "end");
+  line_end(tokens);
   return new For(x, y, z);
 }
 
-Code *return_statement() {
-  if (tokens->empty())
+Code *return_statement(Token_List &tokens) {
+  if (tokens.empty())
     return new Return(0);
-  return new Return(expression());
+  return new Return(expression(tokens));
 }
 
-Code *statement() {
-  if (match("return"))
-    return return_statement();
-  if (match("if"))
-    return if_statement();
-  if (match("while"))
-    return while_statement();
-  if (match("repeat"))
-    return repeat_statement();
-  if (match("for"))
-    return for_statement();
-  return print_or_assign();
+Code *statement(Token_List &tokens) {
+  if (match(tokens, "return"))
+    return return_statement(tokens);
+  if (match(tokens, "if"))
+    return if_statement(tokens);
+  if (match(tokens, "while"))
+    return while_statement(tokens);
+  if (match(tokens, "repeat"))
+    return repeat_statement(tokens);
+  if (match(tokens, "for"))
+    return for_statement(tokens);
+  return print_or_assign(tokens);
 }
 
-Code *statements() {
-  next_line();
-  if (at_end_line())
-    return statements();
-  if (check("end") || check("else") || check("until"))
+Code *statements(Token_List &tokens) {
+  line_end(tokens);
+  tokens = *tokenize(read_line()).get();
+  if (tokens.empty())
+    return statements(tokens);
+  if (check(tokens, "end") || check(tokens, "else") || check(tokens, "until"))
     return 0;
-  Code *stmt = statement();
-  line_end();
-  return new Statement(stmt, statements());
+  Code *stmt = statement(tokens);
+  return new Statement(stmt, statements(tokens));
 }
 
-void formal_parameter_list() {
-  if (is_identifier()) {
+void formal_parameter_list(Token_List &tokens) {
+  if (check_identifier(tokens)) {
     do {
-      std::string id = identifier();
+      std::string id = identifier(tokens);
       auto p = local_symbol_table.find(id);
       if (p == local_symbol_table.end())
 	local_symbol_table[id] = -(++locals);
@@ -672,58 +687,49 @@ void formal_parameter_list() {
 	std::cout << "parameter \"" << id << "\" repeated in parameter list" << std::endl;
 	exit(1);
       }
-    } while (match(","));
+    } while (match(tokens, ","));
   }
 }
 
-Code *define_function() {
+Code *define_function(Token_List &tokens) {
   in_function = true;
-  std::string id = identifier();
+  std::string id = identifier(tokens);
   locals = 0;
-  need("(");
-  formal_parameter_list();
+  need(tokens, "(");
+  formal_parameter_list(tokens);
   int params = locals;
-  need(")");
-  line_end();
-  Code *body = statements();
-  // print_code(body);
-  need("end");
-  line_end();
+  need(tokens, ")");
+  Code *body = statements(tokens);
+  need(tokens, "end");
+  line_end(tokens);
   function_table[id] = Function_Pointer(new User_Function(params, locals-params, body));
   local_symbol_table.clear();
   in_function = false;
-  return 0;
+  return new Noop();
 }
 
-Code *include() {
-  return new Include(expression());
+Code *include(Token_List &tokens) {
+  return new Include(expression(tokens));
 }
 
-Code *compile() {
-  if (!tokens->empty()) {
-    if (match("include")) 
-      return include();
-    if (match("function"))
-      return define_function();
-    return print_or_assign();
+Code *compile(Token_List &tokens) {
+  if (!tokens.empty()) {
+    if (match(tokens, "include")) 
+      return include(tokens);
+    if (match(tokens, "function"))
+      return define_function(tokens);
+    return print_or_assign(tokens);
   }
-  return 0;
+  return new Noop();
+}
+
+Code *compile_command(std::unique_ptr<Token_List> tokens) {
+  return compile(*tokens.get());
 }
 
 void command_loop() {
   while (!file_stack.empty()) {
-    next_line();
-    if (!tokens->empty()) {
-      Code *cmd = compile();
-      line_end();
-      if (cmd) {
-	cmd->execute();
-	delete cmd;
-      }
-    }
-    for (auto p : *tokens)
-      delete p;
-    delete tokens;
+    compile_command(tokenize(read_line()))->execute();
   }
 }
 
@@ -793,15 +799,21 @@ int main(int argc, char **argv) {
   initialize_builtin_functions();
 
   file_stack.push(File_Pointer(new std::ifstream(stdlib)));
-
+  file_name_stack.push("<standard library>");
+  file_line_stack.push(0);
+  
   command_loop();
   if (argc == 1) {
     file_stack.push(File_Pointer(&std::cin));
+    file_name_stack.push("<stdin>");
+    file_line_stack.push(0);
     command_loop();
   }
   else {
     for (int i = 1; i < argc; i++) {
       file_stack.push(File_Pointer(new std::ifstream(argv[i])));
+      file_name_stack.push(argv[i]);
+      file_line_stack.push(0);
       if (file_stack.top()->good())
 	command_loop();
       else {

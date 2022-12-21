@@ -428,3 +428,10 @@ public:
   ~Exponent() { delete lhs; delete rhs; }
   Value_ptr execute();
 };
+
+class Noop : public Code {
+public:
+  Noop() { }
+  ~Noop() { }
+  Value_ptr execute() { return std::make_shared<Null>(); }
+};
