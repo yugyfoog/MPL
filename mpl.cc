@@ -11,9 +11,11 @@
 #include <typeinfo>
 #include <cctype>
 #include <regex>
+#include <exception>
 #include "value.hh"
 #include "code.hh"
 #include "function.hh"
+#include "error.hh"
 #include "mpl.hh"
 
 const std::string stdlib = "/usr/local/share/mpl/stdlib.mpl";
@@ -38,11 +40,12 @@ Function_Table function_table;
 bool trace_flag;
 
 [[ noreturn ]] void mpl_error(std::string const &s) {
-  std::cout << "error: "
-            << file_name_stack.top() << ": "
-            << file_line_stack.top() << ": "
-            << s << std::endl;
-  exit(1);
+  throw mpl_exception {
+    "xerror: "
+    + file_name_stack.top() + ": "
+    + std::to_string(file_line_stack.top()) + ": "
+    + s
+  };
 }
 
 Value_ptr read_memory(unsigned index) {
@@ -729,7 +732,11 @@ Code *compile_command(std::unique_ptr<Token_List> tokens) {
 
 void command_loop() {
   while (!file_stack.empty()) {
-    compile_command(tokenize(read_line()))->execute();
+    try {
+      compile_command(tokenize(read_line()))->execute();
+    } catch (mpl_exception const &e) {
+      std::cerr << e.what() << std::endl;
+    }
   }
 }
 
@@ -817,7 +824,7 @@ int main(int argc, char **argv) {
       if (file_stack.top()->good())
 	command_loop();
       else {
-	mpl_error(std::string("unable to open: ") + argv[i]);
+        std::cerr << "unable to open: " << argv[i] << std::endl;
       }
     }
   }

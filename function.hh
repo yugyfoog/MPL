@@ -13,7 +13,6 @@ private:
   int params;
   int locals;
   std::unique_ptr<Code> body;
-  // Code *body;
 public:
   User_Function() = delete;
   // User_Function() : params(0), locals(0), body(0) { }

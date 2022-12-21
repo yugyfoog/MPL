@@ -1,3 +1,7 @@
+class Code;
+
+typedef std::unique_ptr<Code> Code_Pointer;
+
 class Code {
 public:
   virtual ~Code() { }
