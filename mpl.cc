@@ -41,7 +41,7 @@ bool trace_flag;
 
 [[ noreturn ]] void mpl_error(std::string const &s) {
   throw mpl_exception {
-    "xerror: "
+    "error: "
     + file_name_stack.top() + ": "
     + std::to_string(file_line_stack.top()) + ": "
     + s
@@ -58,10 +58,8 @@ Value_ptr read_memory(unsigned index) {
 void write_memory(unsigned index, Value_ptr x) {
   if (memory.size() <= (unsigned)stack_pointer)
     memory.resize(stack_pointer);
-  if (index < (unsigned)frame_pointer && typeid(*x) == typeid(Memory_Reference)) {
-    std::cout << "writing reference to global variable" << std::endl;
-    exit(1);
-  }
+  if (index < (unsigned)frame_pointer && typeid(*x) == typeid(Memory_Reference))
+    mpl_error("writing reference to global variable");
   if (memory[index] != x)
     memory[index] = x;
 }
@@ -146,8 +144,7 @@ bool scan_line(std::string &line) {
   case 1:
     return true;
   default:
-    std::cout << "missing quote (\")" << std::endl;
-    exit(1);
+    mpl_error("missing quote (\")");
   }
 }
 
@@ -235,7 +232,6 @@ std::unique_ptr<Token_List> tokenize(std::string const &line) {
       s += *p++;
       while (is_id_character(*p))
         s += *p++;
-      // std::cout << "<" << s << ">" << std::endl;
       tokens->push_back(move(s));
     }
     else if (isdigit(*p) || *p == '.') {
@@ -254,7 +250,6 @@ std::unique_ptr<Token_List> tokenize(std::string const &line) {
         while (isdigit(*p))
           s += *p++;
       }
-      // std::cout << "<" << s << ">" << std::endl;  
       tokens->push_back(move(s));
     }
     else if (*p == '#') {
@@ -262,7 +257,6 @@ std::unique_ptr<Token_List> tokenize(std::string const &line) {
       s += *p++;
       while (isxdigit(*p))
         s += *p++;
-      // std::cout << "<" << s << ">" << std::endl;
       tokens->push_back(move(s));
     }
     else if (*p == '"') {
@@ -282,7 +276,6 @@ std::unique_ptr<Token_List> tokenize(std::string const &line) {
       if (p == line.end())
         mpl_error("missing \"");
       s += *p++;
-      // std::cout << "<" << s << ">" << std::endl;
       tokens->push_back(move(s));
     }
     else {
@@ -297,7 +290,6 @@ std::unique_ptr<Token_List> tokenize(std::string const &line) {
                 || c == '>'))
           s += *p++;
       }
-      // std::cout << "<" << s << ">" << std::endl;
       tokens->push_back(move(s));
     }
   }
@@ -686,10 +678,8 @@ void formal_parameter_list(Token_List &tokens) {
       auto p = local_symbol_table.find(id);
       if (p == local_symbol_table.end())
 	local_symbol_table[id] = -(++locals);
-      else {
-	std::cout << "parameter \"" << id << "\" repeated in parameter list" << std::endl;
-	exit(1);
-      }
+      else
+        mpl_error("parameter \"" + id + "\" repeated in parameter list");
     } while (match(tokens, ","));
   }
 }

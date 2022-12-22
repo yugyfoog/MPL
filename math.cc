@@ -20,6 +20,24 @@
 typedef Value_ptr Doit1(Value *);
 typedef Value_ptr Doit2(Value *, Value *);
 
+[[noreturn]] void type_error(std::string const &operation,
+                             Value *u, Value *v) {
+  mpl_error("don't know how to " + operation + " "
+            + typeid(*u).name() + " and "
+            + typeid(*v).name());
+}
+
+[[noreturn]] void type_error1(std::string const &operation,
+                              Value *u) {
+  mpl_error("don't know how to " + operation + " "
+            + typeid(*u).name());
+}
+
+[[noreturn]] void index_error(Value *a, Value *i) {
+  mpl_error(std::string("illegal index ") + typeid(*a).name()
+            + "[" + typeid(*i).name() + "]");
+}
+
 // generic unary operations on a list
 
 Value_ptr dolist(List *u, Doit1 *func) {  
@@ -1592,9 +1610,7 @@ Value_ptr multiply(Value *u, Value *v) {
     if (typeid(*v) == typeid(Real))
       return Value_ptr(multiply((Real *)v, (String *)u));
   }
-  std::cout << "don't know how to multiply " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
-  mpl_error("type error");
-  return 0;
+  type_error("multiply", u, v);
 }
 
 Vector *pointwise_multiply(Vector *u, Vector *v) {
@@ -1863,9 +1879,7 @@ Value_ptr divide(Value *u, Value *v) {
     if (typeid(*v) == typeid(Complex))
       return Value_ptr(divide((CMatrix *)u, (Complex *)v));
   }
-  std::cout << "don't know how to divide " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
-  mpl_error("type_error");
-  return 0;
+  type_error("divide", u, v);
 }
 
 Vector *pointwise_divide(Vector *u, Vector *v) {
@@ -2031,9 +2045,7 @@ Value_ptr pointwise_divide(Value *u, Value *v) {
     if (typeid(*v) == typeid(CMatrix))
       return Value_ptr(pointwise_divide((CMatrix *)u, (CMatrix *)v));
   }
-  std::cout << "don't know how to divide " << typeid(*u).name() << " and " << typeid(*v).name() << std::endl;
-  mpl_error("type error in pointwise divide");
-  return 0;
+  type_error("pointwise divide", u, v);
 }
 
 Real *floored_divide(Real *u, Real *v) {
@@ -2045,8 +2057,7 @@ Value_ptr floored_divide(Value *u, Value *v) {
     return dolist(u, v, floored_divide);
   if (typeid(*u) == typeid(Real) && typeid(*v) == typeid(Real))
     return Value_ptr(floored_divide((Real *)u, (Real *)v));
-  mpl_error("type_error");
-  return 0;
+  type_error("floored divide", u, v);
 }
 
 Real *modulo(Real *u, Real *v) {
@@ -2133,9 +2144,7 @@ Value_ptr negate(Value *u) {
     return Value_ptr(negate((CMatrix *)u));
   if (typeid(*u) == typeid(String))
     return Value_ptr(negate((String *)u));
-  std::cout << "don't know how to negate " << typeid(*u).name() << std::endl;
-  mpl_error("type error");
-  return 0;
+  type_error1("negate", u);
 }
 
 Real *power(Real *u, Real *v) {
@@ -2172,22 +2181,6 @@ Value_ptr power(Value *u, Value *v) {
   mpl_error("type error");
   return 0;
 }
-
-/*
-
- a.start, a.size, a.stride
- b.start, b.size. b.stride
-
- c.start = a.start + a.stride*b.start;
- c.size = b.size
- c.stride = a.stride*b.stride
-
-
-
-
-
- */
-
 
 std::slice compose(std::slice const &a, std::slice const &b) {
   int new_start = a.stride()*b.start() + a.start();
@@ -2247,9 +2240,7 @@ Value_ptr row_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(row_index((CMatrix *)a, (Slice *)i));
   }
-  std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
-  mpl_error("illegal index 1");
-  return 0;
+  index_error(a, i);
 }
 
 Vector *column_index(Matrix *a, Real *i) {
@@ -2313,9 +2304,7 @@ Value_ptr column_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(column_index((CMatrix *)a, (Slice *)i));
   }
-  std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
-  mpl_error("illegal index 2");
-  return 0;
+  index_error(a, i);
 }
 
 Real *simple_index(Vector *a, Real *i) {
@@ -2401,9 +2390,7 @@ Value_ptr simple_index(Value *a, Value *i) {
     if (typeid(*i) == typeid(Slice))
       return Value_ptr(simple_index((List *)a, (Slice *)i));
   }
-  std::cout << typeid(*a).name() << "[" << typeid(*i).name() << "]" << std::endl;
-  mpl_error("illegal index 3");
-  return 0;
+  index_error(a, i);
 }
 
 // when u is part of a vector or matrix
@@ -2500,8 +2487,9 @@ void assign(Value *u, Value_ptr v) {
     else if (typeid(*u) == typeid(List_Member))
       assign((List_Member *)u, v);
     else {
-      std::cout << typeid(*u).name() << " = " << typeid(*v.get()).name() << std::endl;
-      mpl_error("illegal assignment");
+      mpl_error(std::string("illegal assignment ")
+                + typeid(*u).name() + " = "
+                + typeid(*v).name());
     }
   }
 }

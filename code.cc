@@ -40,10 +40,8 @@ Value_ptr Print::execute() {
   Value_ptr u = code->execute();
   if (u) {
     u = value(u);
-    if (u == 0) {
-      std::cout << "undefined variable" << std::endl;
-      exit(1);
-    }
+    if (u == 0)
+      mpl_error("undefined variable");
     if (typeid(*u) != typeid(Null))
       std::cout << u->print() << std::endl;
   }
@@ -54,10 +52,8 @@ Value_ptr Include::execute() {
   Value_ptr u = value(code->execute());
   std::string s = u->print();
   auto in = new std::ifstream(s);
-  if (!in->good()) {
-    std::cout << "unable to open " << s << std::endl;
-    exit(1);
-  }
+  if (!in->good())
+    mpl_error("unable to open " + s);
   file_stack.push(File_Pointer(new std::ifstream(s)));
   return 0;
 }
@@ -79,10 +75,8 @@ bool is_true(Value_ptr t) {
     if (u->value() == 0.0)
       return false;
   }
-  else {
-    std::cout << "only reals allowed in conditions" << std::endl;
-    exit(1);
-  }
+  else
+    mpl_error("only reals allowed in conditions");
   return true;
 }
 
@@ -201,10 +195,8 @@ Value_ptr RealX::execute() {
 Value_ptr ComplexX::execute() {
   Value_ptr r = value(real->execute());
   Value_ptr i = value(imag->execute());
-  if ((typeid(*r) != typeid(Real)) || (typeid(*i) != typeid(Real))) {
-    std::cout << "illegal complex" << std::endl;
-    exit(1);
-  }
+  if ((typeid(*r) != typeid(Real)) || (typeid(*i) != typeid(Real)))
+    mpl_error("illegal complex");
   Real *ru = (Real *)r.get();
   Real *iu = (Real *)i.get();
   return std::make_shared<Complex>(std::complex<double>(ru->value(), iu->value()));
@@ -323,11 +315,8 @@ Value_ptr Range::execute() {
 }
 
 Value_ptr Call::execute() {
-  if (function_table.count(func) == 0) {
-    std::cout << func << " is not defined" << std::endl;
-    exit(1);
-  }
-  
+  if (function_table.count(func) == 0)
+    mpl_error(func + " is not defined");
   int save_frame_pointer = frame_pointer;
   int save_stack_pointer = stack_pointer;
   if (args)
