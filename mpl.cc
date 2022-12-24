@@ -338,172 +338,170 @@ std::string identifier(Token_List &tokens) {
   return rv;
 }
 
-Code *expression(Token_List &tokens);
+Code_Pointer expression(Token_List &tokens);
 
 // xlist() -- list, vector, or row of a matrix (not empty)
 
-Code *xlist(Token_List &tokens) {
-  Code *x = expression(tokens);
+Code_Pointer xlist(Token_List &tokens) {
+  Code_Pointer x = expression(tokens);
   if (match(tokens, ","))
-    return new ListPart(x, xlist(tokens));
-  return new ListPart(x, 0);
+    return Code_Pointer(new ListPart(std::move(x), std::move(xlist(tokens))));
+  return Code_Pointer(new ListPart(std::move(x), nullptr));
 }
 
 // rows of a matrix
 
-Code *yylist(Token_List &tokens) {
-  Code *x = xlist(tokens);
+Code_Pointer yylist(Token_List &tokens) {
+  Code_Pointer x = xlist(tokens);
   if (tokens.empty()) {
     do
       tokens = *tokenize(read_line()).get(); // endless loop if missing extra lines at end of file
     while (tokens.empty());
-    return new ListPart(x, yylist(tokens));
+    return Code_Pointer(new ListPart(std::move(x), std::move(yylist(tokens))));
   }
   if (match(tokens, "|"))
-    return new ListPart(x, yylist(tokens));
-  return new ListPart(x, 0);
+    return Code_Pointer(new ListPart(std::move(x), std::move(yylist(tokens))));
+  return Code_Pointer(new ListPart(std::move(x), nullptr));
 }
 
 // ylist() -- either a vector or a matrix
 
-Code *ylist(Token_List &tokens) {
-  Code *x = xlist(tokens);
+Code_Pointer ylist(Token_List &tokens) {
+  Code_Pointer x = xlist(tokens);
   if (tokens.empty()) {
     do
       tokens = *tokenize(read_line()).get(); // endless loop if missing extra lines at end of file
     while (tokens.empty());
-    return new ListPart(x, yylist(tokens));
+    return Code_Pointer(new ListPart(std::move(x), std::move(yylist(tokens))));
   }
   if (match(tokens, "|"))
-    return new ListPart(x, yylist(tokens));
+    return Code_Pointer(new ListPart(std::move(x), std::move(yylist(tokens))));
   return x;
 }
 
-Code *parameters(Token_List &tokens) {
-  Code *param = expression(tokens);
+Code_Pointer parameters(Token_List &tokens) {
+  Code_Pointer param = expression(tokens);
   if (match(tokens, ","))
-    return new Parameter(param, parameters(tokens));
-  return new Parameter(param, 0);
+    return Code_Pointer(new Parameter(std::move(param), std::move(parameters(tokens))));
+  return Code_Pointer(new Parameter(std::move(param), nullptr));
 }
 
-Code *range(Token_List &tokens) {
-  Code *x;
-  Code *y = 0;
-  Code *z = 0;
+Code_Pointer range(Token_List &tokens) {
+  Code_Pointer y = nullptr;
+  Code_Pointer z = nullptr;
 
-  x = expression(tokens);
+  Code_Pointer x = expression(tokens);
   if (match(tokens, ":")) {
     y = expression(tokens);
     if (match(tokens, ":"))
       z = expression(tokens);
-    return new Range(x, y, z);
+    return Code_Pointer(new Range(std::move(x), std::move(y), std::move(z)));
   }
   return x;
 }
 
-Code *primary_expression(Token_List &tokens) {
-  Code *x;
-  
+Code_Pointer primary_expression(Token_List &tokens) {
   if (match(tokens, "(")) {
-    x = expression(tokens);
+    Code_Pointer x = expression(tokens);
     if (match(tokens, ","))
-      x = new ComplexX(x, expression(tokens));
+      x = Code_Pointer(new ComplexX(std::move(x), std::move(expression(tokens))));
     need(tokens, ")");
+    return x;
   }
-  else if (match(tokens, "[")) {
-    x = ylist(tokens);
+  if (match(tokens, "[")) {
+    Code_Pointer x = ylist(tokens);
     need(tokens, "]");
-    return new Call("matvec", new Parameter(x, 0));
+    return Code_Pointer(new Call("matvec", Code_Pointer(new Parameter(std::move(x), nullptr))));
   }
-  else if (match(tokens, "{")) {
+  if (match(tokens, "{")) {
+    Code_Pointer x = nullptr;
     if (check(tokens, "}"))
-      x = new ListX(0); // empty list
+      x = Code_Pointer(new ListX(nullptr)); // empty list
     else
-      x = new ListX(xlist(tokens));
+      x = Code_Pointer(new ListX(xlist(tokens)));
     need(tokens, "}");
+    return x;
   }
-  else if (check_number(tokens)) {
-    x = new RealX(tokens.front());
+  if (check_number(tokens)) {
+    Code_Pointer x = Code_Pointer(new RealX(tokens.front()));
     tokens.pop_front();
+    return x;
   }
-  else if (check_string(tokens)) {
-    x = new StringX(tokens.front());
+  if (check_string(tokens)) {
+    Code_Pointer x = Code_Pointer(new StringX(tokens.front()));
     tokens.pop_front();
+    return x;
   }
-  else if (check_identifier(tokens)) {
+  if (check_identifier(tokens)) {
     std::string id = identifier(tokens);
     if (match(tokens, "(")) {
-      if (match(tokens, ")"))
-	x = 0;
-      else {
+      Code_Pointer x = nullptr;
+      if (!match(tokens, ")")) {
 	x = parameters(tokens);
-	need(tokens, ")");
+        need(tokens, ")");
       }
-      x = new Call(id, x);
+      return Code_Pointer(new Call(id, std::move(x)));
     }
-    else {
-      x = new Variable(id);
-      // only allow indexing after 
-      for (;;) {
-	if (match(tokens, "[")) {
-	  if (match(tokens, ","))
-	    x = new ColumnIndex(x, range(tokens));
-	  else {
-	    Code *y = range(tokens);
-	    if (match(tokens, ",")) {
-	      if (check(tokens, "]"))
-		x = new RowIndex(x, y);
-	      else
-		x = new ColumnIndex(new RowIndex(x, y), range(tokens));
-	    }
-	    else
-	      x = new Index(x, y);
-	  }
-	  need(tokens, "]");
-	}
-	else
-	  break;
+    Code_Pointer x = Code_Pointer(new Variable(id));
+    // only allow indexing after variable
+    for (;;) {
+      if (match(tokens, "[")) {
+        if (match(tokens, ","))
+          x = Code_Pointer(new ColumnIndex(std::move(x), std::move(range(tokens))));
+        else {
+          Code_Pointer y = range(tokens);
+          if (match(tokens, ",")) {
+            if (check(tokens, "]"))
+              x = Code_Pointer(new RowIndex(std::move(x), std::move(y)));
+            else
+              x = Code_Pointer(new ColumnIndex(Code_Pointer(new RowIndex(std::move(x),
+                                                                         std::move(y))),
+                                               std::move(range(tokens))));
+          }
+          else
+            x = Code_Pointer(new Index(std::move(x), std::move(y)));
+        }
+        need(tokens, "]");
       }
+      else
+        break;
     }
+    return x;
   }
-  else {
-    if (tokens.empty())
-      mpl_error("syntax error in expression");
-    else
-      mpl_error("syntax error in expression near " + tokens.front());
-  }
-  return x;
+  if (tokens.empty())
+    mpl_error("syntax error in expression");
+  mpl_error("syntax error in expression near " + tokens.front());
 }
 
-Code *exponential_expression(Token_List &tokens) {
-  Code *x = primary_expression(tokens);
+Code_Pointer exponential_expression(Token_List &tokens) {
+  Code_Pointer x = primary_expression(tokens);
   if (match(tokens, "^"))
-    return new Exponent(x, exponential_expression(tokens));
+    return Code_Pointer(new Exponent(std::move(x), std::move(exponential_expression(tokens))));
   return x;
 }
 
-Code *factor(Token_List &tokens) {
+Code_Pointer factor(Token_List &tokens) {
   if (match(tokens, "-"))
-    return new Negate(factor(tokens));
+    return Code_Pointer(new Negate(factor(tokens)));
   return exponential_expression(tokens);
 }
 
-Code *term(Token_List &tokens) {
-  Code *x = factor(tokens);
+Code_Pointer term(Token_List &tokens) {
+  Code_Pointer x = factor(tokens);
   for (;;) {
     if (match(tokens, "*"))
-      x = new Multiply(x, factor(tokens));
+      x = Code_Pointer(new Multiply(std::move(x), std::move(factor(tokens))));
     else if (match(tokens, "/"))
-      x = new Divide(x, factor(tokens));
+      x = Code_Pointer(new Divide(std::move(x), std::move(factor(tokens))));
     else if (match(tokens, "div"))
-      x = new Floored_Divide(x, factor(tokens));
+      x = Code_Pointer(new Floored_Divide(std::move(x), std::move(factor(tokens))));
     else if (match(tokens, "mod"))
-      x = new Modulo(x, factor(tokens));
+      x = Code_Pointer(new Modulo(std::move(x), std::move(factor(tokens))));
     else if (match(tokens, ".")) {
       if (match(tokens, "*"))
-	x = new Pointwise_Multiply(x, factor(tokens));
+	x = Code_Pointer(new Pointwise_Multiply(std::move(x), std::move(factor(tokens))));
       else if (match(tokens, "/"))
-	 x = new Pointwise_Divide(x, factor(tokens));
+        x = Code_Pointer(new Pointwise_Divide(std::move(x), std::move(factor(tokens))));
       else
 	mpl_error("syntax error near " + tokens.front());
     }
@@ -513,90 +511,90 @@ Code *term(Token_List &tokens) {
   return x;
 }
 
-Code *arithmetic_expression(Token_List &tokens) {
-  Code *x = term(tokens);
+Code_Pointer arithmetic_expression(Token_List &tokens) {
+  Code_Pointer x = term(tokens);
   for (;;) {
     if (match(tokens, "+"))
-      x = new Add(x, term(tokens));
+      x = Code_Pointer(new Add(std::move(x), std::move(term(tokens))));
     else if (match(tokens, "-"))
-      x = new Subtract(x, term(tokens));
+      x = Code_Pointer(new Subtract(std::move(x), std::move(term(tokens))));
     else
       break;
   }
   return x;
 }
 
-Code *relational_expression(Token_List &tokens) {
-  Code *x = arithmetic_expression(tokens);
+Code_Pointer relational_expression(Token_List &tokens) {
+  Code_Pointer x = arithmetic_expression(tokens);
   for (;;) {
     if (match(tokens, "=="))
-      x = new EQ(x, arithmetic_expression(tokens));
+      x = Code_Pointer(new EQ(std::move(x), std::move(arithmetic_expression(tokens))));
     else if (match(tokens, "!="))
-      x = new NE(x, arithmetic_expression(tokens));
+      x = Code_Pointer(new NE(std::move(x), std::move(arithmetic_expression(tokens))));
     else if (match(tokens, "<"))
-      x = new LT(x, arithmetic_expression(tokens));
+      x = Code_Pointer(new LT(std::move(x), std::move(arithmetic_expression(tokens))));
     else if (match(tokens, "<="))
-      x = new LE(x, arithmetic_expression(tokens));
+      x = Code_Pointer(new LE(std::move(x), std::move(arithmetic_expression(tokens))));
     else if (match(tokens, ">"))
-      x = new GT(x, arithmetic_expression(tokens));
+      x = Code_Pointer(new GT(std::move(x), std::move(arithmetic_expression(tokens))));
     else if (match(tokens, ">="))
-      x = new GE(x, arithmetic_expression(tokens));
+      x = Code_Pointer(new GE(std::move(x), std::move(arithmetic_expression(tokens))));
     else
       break;
   }
   return x;
 }
 
-Code *logical_factor(Token_List &tokens) {
+Code_Pointer logical_factor(Token_List &tokens) {
   if (match(tokens, "not"))
-    return new Not(logical_factor(tokens));
+    return Code_Pointer(new Not(std::move(logical_factor(tokens))));
   if (match(tokens, "bnot"))
-    return new BNot(logical_factor(tokens));
+    return Code_Pointer(new BNot(std::move(logical_factor(tokens))));
   return relational_expression(tokens);
 }
 
-Code *logical_term(Token_List &tokens) {
-  Code *x = logical_factor(tokens);
+Code_Pointer logical_term(Token_List &tokens) {
+  Code_Pointer x = logical_factor(tokens);
   for (;;) {
     if (match(tokens, "and"))
-      x = new And(x, logical_factor(tokens));
+      x = Code_Pointer(new And(std::move(x), std::move(logical_factor(tokens))));
     else if (match(tokens, "band"))
-      x = new BAnd(x, logical_factor(tokens));
+      x = Code_Pointer(new BAnd(std::move(x), std::move(logical_factor(tokens))));
     else
       break;
   }
   return x;
 }
 
-Code *expression(Token_List &tokens) {
-  Code *x = logical_term(tokens);
+Code_Pointer expression(Token_List &tokens) {
+  Code_Pointer x = logical_term(tokens);
   for (;;) {
     if (match(tokens, "or"))
-      x = new Or(x, logical_term(tokens));
+      x = Code_Pointer(new Or(std::move(x), std::move(logical_term(tokens))));
     else if (match(tokens, "bor"))
-      x = new BOr(x, logical_term(tokens));
+      x = Code_Pointer(new BOr(std::move(x), std::move(logical_term(tokens))));
     else if (match(tokens, "bxor"))
-      x = new BXor(x, logical_term(tokens));
+      x = Code_Pointer(new BXor(std::move(x), std::move(logical_term(tokens))));
     else
       break;
   }
   return x;
 }
 
-Code *print_or_assign(Token_List &tokens) {
-  Code *code = expression(tokens);
+Code_Pointer print_or_assign(Token_List &tokens) {
+  Code_Pointer code = expression(tokens);
   if (match(tokens, "="))
-    return new Assign(code, expression(tokens));
-  return new Print(code);
+    return Code_Pointer(new Assign(std::move(code), std::move(expression(tokens))));
+  return Code_Pointer(new Print(std::move(code)));
 }
 
-Code *statements(Token_List &tokens);
+Code_Pointer statements(Token_List &tokens);
 
-Code *if_statement(Token_List &tokens) {
-  Code *cond = expression(tokens);
+Code_Pointer if_statement(Token_List &tokens) {
+  Code_Pointer cond = expression(tokens);
   need(tokens, "then");
-  Code *true_part = statements(tokens);
-  Code *false_part = 0;
+  Code_Pointer true_part = statements(tokens);
+  Code_Pointer false_part = 0;
   if (match(tokens, "else")) {
     if (match(tokens, "if"))
       false_part = if_statement(tokens);
@@ -608,45 +606,45 @@ Code *if_statement(Token_List &tokens) {
   else
     need(tokens, "end");
   line_end(tokens);
-  return new If(cond, true_part, false_part);
+  return Code_Pointer(new If(std::move(cond), std::move(true_part), std::move(false_part)));
 }
 
-Code *while_statement(Token_List &tokens) {
-  Code *cond = expression(tokens);
-  Code *body = statements(tokens);
+Code_Pointer while_statement(Token_List &tokens) {
+  Code_Pointer cond = expression(tokens);
+  Code_Pointer body = statements(tokens);
   need(tokens, "end");
   line_end(tokens);
-  return new While(cond, body);
+  return Code_Pointer(new While(std::move(cond), std::move(body)));
 }
 
-Code *repeat_statement(Token_List &tokens) {
-  Code *body = statements(tokens);
+Code_Pointer repeat_statement(Token_List &tokens) {
+  Code_Pointer body = statements(tokens);
   need(tokens, "until");
-  Code *cond = expression(tokens);
+  Code_Pointer cond = expression(tokens);
   line_end(tokens);
-  return new Repeat(cond, body);
+  return Code_Pointer(new Repeat(std::move(cond), std::move(body)));
 }
 
 // for var in range
 // for var in set
 
-Code *for_statement(Token_List &tokens) {
-  Code *x = new Variable(identifier(tokens)); // no subscripts allowed!
+Code_Pointer for_statement(Token_List &tokens) {
+  Code_Pointer x = Code_Pointer(new Variable(std::move(identifier(tokens)))); // no subscripts allowed!
   need(tokens, "in");
-  Code *y = range(tokens);
-  Code *z = statements(tokens);
+  Code_Pointer y = range(tokens);
+  Code_Pointer z = statements(tokens);
   need(tokens, "end");
   line_end(tokens);
-  return new For(x, y, z);
+  return Code_Pointer(new For(std::move(x), std::move(y), std::move(z)));
 }
 
-Code *return_statement(Token_List &tokens) {
+Code_Pointer return_statement(Token_List &tokens) {
   if (tokens.empty())
-    return new Return(0);
-  return new Return(expression(tokens));
+    return Code_Pointer(new Return(nullptr));
+  return Code_Pointer(new Return(std::move(expression(tokens))));
 }
 
-Code *statement(Token_List &tokens) {
+Code_Pointer statement(Token_List &tokens) {
   if (match(tokens, "return"))
     return return_statement(tokens);
   if (match(tokens, "if"))
@@ -660,15 +658,15 @@ Code *statement(Token_List &tokens) {
   return print_or_assign(tokens);
 }
 
-Code *statements(Token_List &tokens) {
+Code_Pointer statements(Token_List &tokens) {
   line_end(tokens);
   tokens = *tokenize(read_line()).get();
   if (tokens.empty())
     return statements(tokens);
   if (check(tokens, "end") || check(tokens, "else") || check(tokens, "until"))
-    return 0;
-  Code *stmt = statement(tokens);
-  return new Statement(stmt, statements(tokens));
+    return nullptr;
+  Code_Pointer stmt = statement(tokens);
+  return Code_Pointer(new Statement(std::move(stmt), std::move(statements(tokens))));
 }
 
 void formal_parameter_list(Token_List &tokens) {
@@ -684,7 +682,7 @@ void formal_parameter_list(Token_List &tokens) {
   }
 }
 
-Code *define_function(Token_List &tokens) {
+Code_Pointer define_function(Token_List &tokens) {
   in_function = true;
   std::string id = identifier(tokens);
   locals = 0;
@@ -692,20 +690,20 @@ Code *define_function(Token_List &tokens) {
   formal_parameter_list(tokens);
   int params = locals;
   need(tokens, ")");
-  Code *body = statements(tokens);
+  Code_Pointer body = statements(tokens);
   need(tokens, "end");
   line_end(tokens);
-  function_table[id] = Function_Pointer(new User_Function(params, locals-params, body));
+  function_table[id] = Function_Pointer(new User_Function(params, locals-params, std::move(body)));
   local_symbol_table.clear();
   in_function = false;
-  return new Noop();
+  return Code_Pointer(new Noop());
 }
 
-Code *include(Token_List &tokens) {
-  return new Include(expression(tokens));
+Code_Pointer include(Token_List &tokens) {
+  return Code_Pointer(new Include(std::move(expression(tokens))));
 }
 
-Code *compile(Token_List &tokens) {
+Code_Pointer compile(Token_List &tokens) {
   if (!tokens.empty()) {
     if (match(tokens, "include")) 
       return include(tokens);
@@ -713,10 +711,10 @@ Code *compile(Token_List &tokens) {
       return define_function(tokens);
     return print_or_assign(tokens);
   }
-  return new Noop();
+  return Code_Pointer(new Noop());
 }
 
-Code *compile_command(std::unique_ptr<Token_List> tokens) {
+Code_Pointer compile_command(std::unique_ptr<Token_List> tokens) {
   return compile(*tokens.get());
 }
 

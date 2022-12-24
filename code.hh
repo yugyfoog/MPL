@@ -10,99 +10,104 @@ public:
 
 class Assign : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Assign(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Assign() { delete lhs; delete rhs; }
+  Assign(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Assign() { }
   Value_ptr execute();
 };
   
 class Print : public Code {
 private:
-  Code *code;
+  Code_Pointer code;
 public:
-  Print(Code *c) : code(c) { }
-  ~Print() { delete code; }
+  Print(Code_Pointer c) : code(std::move(c)) { }
+  ~Print() { }
   Value_ptr execute();
 };
 
 class Include : public Code {
 private:
-  Code *code;
+  Code_Pointer code;
 public:
-  Include(Code *c) : code(c) { }
-  ~Include() { delete code; }
+  Include(Code_Pointer c) : code(std::move(c)) { }
+  ~Include() { }
   Value_ptr execute();
 };
 
 class Statement : public Code {
 private:
-  Code *stmt;
-  Code *next;
+  Code_Pointer stmt;
+  Code_Pointer next;
 public:
-  Statement(Code *s, Code *n) : stmt(s), next(n) { }
-  ~Statement() { delete stmt; delete next; }
+  Statement(Code_Pointer s, Code_Pointer n) : stmt(std::move(s)), next(std::move(n)) { }
+  ~Statement() { }
   Value_ptr execute();
 };
 
 class If : public Code {
 private:
-  Code *condition;
-  Code *true_part;
-  Code *false_part;
+  Code_Pointer condition;
+  Code_Pointer true_part;
+  Code_Pointer false_part;
 public:
-  If(Code *c, Code *t, Code *f) : condition(c), true_part(t), false_part(f) { }
-  ~If() { delete condition; delete true_part; delete false_part; }
+  If(Code_Pointer c, Code_Pointer t, Code_Pointer f) : condition(std::move(c)),
+                                                       true_part(std::move(t)),
+                                                       false_part(std::move(f)) { }
+  ~If() { }
   Value_ptr execute();
 };
 
 class While : public Code {
 private:
-  Code *condition;
-  Code *body;
+  Code_Pointer condition;
+  Code_Pointer body;
 public:
-  While(Code *c, Code *b) : condition(c), body(b) { }
-  ~While() { delete condition; delete body; }
+  While(Code_Pointer c, Code_Pointer b) : condition(std::move(c)), body(std::move(b)) { }
+  ~While() { }
   Value_ptr execute();
 };
 
 class Repeat : public Code {
 private:
-  Code *condition;
-  Code *body;
+  Code_Pointer condition;
+  Code_Pointer body;
 public:
-  Repeat(Code *c, Code *b) : condition(c), body(b) { }
-  ~Repeat() { delete condition; delete body; }
+  Repeat(Code_Pointer c, Code_Pointer b) : condition(std::move(c)), body(std::move(b)) { }
+  ~Repeat() { }
   Value_ptr execute();
 };
 
 class For : public Code {
 private:
-  Code *variable;
-  Code *range;
-  Code *body;
+  Code_Pointer variable;
+  Code_Pointer range;
+  Code_Pointer body;
 public:
-  For(Code *v, Code *r, Code *b) : variable(v), range(r), body(b) { }
-  ~For() { delete variable; delete range; delete body; }
+  For(Code_Pointer v, Code_Pointer r, Code_Pointer b) : variable(std::move(v)),
+                                                        range(std::move(r)),
+                                                        body(std::move(b)) { }
+  ~For() { }
   Value_ptr execute();
 };
 
 class Parameter : public Code {
 private:
-  Code *param;
-  Code *next;
+  Code_Pointer param;
+  Code_Pointer next;
 public:
-  Parameter(Code *p, Code *n) : param(p), next(n) { }
-  ~Parameter() { delete param; delete next; }
+  Parameter(Code_Pointer p, Code_Pointer n) : param(std::move(p)), next(std::move(n)) { }
+  ~Parameter() { }
   Value_ptr execute();
 };
 
 class Return : public Code {
 private:
-  Code *expr;
+  Code_Pointer expr;
 public:
-  Return(Code *e) : expr(e) { }
-  ~Return() { delete expr; }
+  Return(Code_Pointer e) : expr(std::move(e)) { }
+  ~Return() { }
   Value_ptr execute();
 };
 
@@ -116,11 +121,11 @@ public:
 };
 
 class ComplexX : public Code {
-  Code *real;
-  Code *imag;
+  Code_Pointer real;
+  Code_Pointer imag;
 public:
-  ComplexX(Code *r, Code *i) : real(r), imag(i) { }
-  ~ComplexX() { delete real; delete imag; }
+  ComplexX(Code_Pointer r, Code_Pointer i) : real(std::move(r)), imag(std::move(i)) { }
+  ~ComplexX() { }
   Value_ptr execute();
 };
 
@@ -138,10 +143,10 @@ public:
 
 class ListX : public Code {
 private:
-  Code *list;
+  Code_Pointer list;
 public:
-  ListX(Code *l) : list(l) { }
-  ~ListX() { delete list; }
+  ListX(Code_Pointer l) : list(std::move(l)) { }
+  ~ListX() { }
   Value_ptr execute();
 };
 
@@ -149,11 +154,11 @@ public:
 
 class ListPart : public Code {
 private:
-  Code *member;
-  Code *next;
+  Code_Pointer member;
+  Code_Pointer next;
 public:
-  ListPart(Code *m, Code *n) : member(m), next(n) { }
-  ~ListPart() { delete member; delete next; }
+  ListPart(Code_Pointer m, Code_Pointer n) : member(std::move(m)), next(std::move(n)) { }
+  ~ListPart() { }
   Value_ptr execute();
 };
 
@@ -168,268 +173,277 @@ public:
 
 class ColumnIndex : public Code {
 private:
-  Code *base;
-  Code *index;
+  Code_Pointer base;
+  Code_Pointer index;
 public:
-  ColumnIndex(Code *b, Code *i) : base(b), index(i) { }
-  ~ColumnIndex() { delete base; delete index; }
+  ColumnIndex(Code_Pointer b, Code_Pointer i) : base(std::move(b)), index(std::move(i)) { }
+  ~ColumnIndex() { }
   Value_ptr execute();
 };
 
 class RowIndex : public Code {
 private:
-  Code *base;
-  Code *index;
+  Code_Pointer base;
+  Code_Pointer index;
 public:
-  RowIndex(Code *b, Code *i) : base(b), index(i) { }
-  ~RowIndex() { delete base; delete index; }
+  RowIndex(Code_Pointer b, Code_Pointer i) : base(std::move(b)), index(std::move(i)) { }
+  ~RowIndex() { }
   Value_ptr execute();
 };
-
-/*
-class MatrixIndex : public Code {
-private:
-  Code *base;
-  Code *row_index;
-  Code *col_index;
-public:
-  MatrixIndex(Code *b, Code *r, Code *c) : base(b), row_index(r), col_index(c) { }
-  ~MatrixIndex() { delete base; delete row_index; delete col_index; }
-  Value_ptr execute();
-};
-*/
 
 class Index : public Code {
 private:
-  Code *base;
-  Code *index;
+  Code_Pointer base;
+  Code_Pointer index;
 public:
-  Index(Code *b, Code *i) : base(b), index(i) { }
-  ~Index() { delete base; delete index; }
+  Index(Code_Pointer b, Code_Pointer i) : base(std::move(b)), index(std::move(i)) { }
+  ~Index() { }
   Value_ptr execute();
 };
 
 class Range : public Code {
 private:
-  Code *start;
-  Code *length;
-  Code *stride;
+  Code_Pointer start;
+  Code_Pointer length;
+  Code_Pointer stride;
 public:
-  Range(Code *srt, Code *len, Code *str) : start(srt), length(len), stride(str) { }
-  ~Range() { delete start; delete length; delete stride; };
+  Range(Code_Pointer srt, Code_Pointer len, Code_Pointer str) : start(std::move(srt)),
+                                                                length(std::move(len)),
+                                                                stride(std::move(str)) { }
+  ~Range() { };
   Value_ptr execute();
 };
 
 class Call : public Code {
   std::string func;
-  Code *args;
+  Code_Pointer args;
 public:
-  Call(std::string const &s, Code *c) : func(s), args(c) { }
-  ~Call() { delete args; }
+  Call(std::string const &s, Code_Pointer c) : func(s), args(std::move(c)) { }
+  ~Call() { }
   Value_ptr execute();
 };
 
 class Or : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Or(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Or() { delete lhs; delete rhs; }
+  Or(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Or() { }
   Value_ptr execute();
 };
 
 class BOr : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  BOr(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~BOr() { delete lhs; delete rhs; }
+  BOr(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~BOr() { }
   Value_ptr execute();
 };
 
 class BXor : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  BXor(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~BXor() { delete lhs; delete rhs; }
+  BXor(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~BXor() { }
   Value_ptr execute();
 };
 
 class And : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  And(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~And() { delete lhs; delete rhs; }
+  And(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~And() { }
   Value_ptr execute();
 };
 
 class BAnd : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  BAnd(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~BAnd() { delete lhs; delete rhs; }
+  BAnd(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~BAnd() { }
   Value_ptr execute();
 };
 
 class Not : public Code {
-  Code *code;
+  Code_Pointer code;
 public:
-  Not(Code *c) : code(c) { }
-  ~Not() { delete code; }
+  Not(Code_Pointer c) : code(std::move(c)) { }
+  ~Not() { }
   Value_ptr execute();
 };
 
 class BNot : public Code {
-  Code *code;
+  Code_Pointer code;
 public:
-  BNot(Code *c) : code(c) { }
-  ~BNot() { delete code; }
+  BNot(Code_Pointer c) : code(std::move(c)) { }
+  ~BNot() { }
   Value_ptr execute();
 };
 
 class EQ : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  EQ(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~EQ() { delete lhs; delete rhs; }
+  EQ(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~EQ() { }
   Value_ptr execute();
 };
 
 class NE : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  NE(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~NE() { delete lhs; delete rhs; }
+  NE(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~NE() { }
   Value_ptr execute();
 };
 
 class LT : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  LT(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~LT() { delete lhs; delete rhs; }
+  LT(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~LT() { }
   Value_ptr execute();
 };
 
 class LE : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  LE(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~LE() { delete lhs; delete rhs; }
+  LE(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~LE() { }
   Value_ptr execute();
 };
 
 class GT : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  GT(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~GT() { delete lhs; delete rhs; }
+  GT(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~GT() { }
   Value_ptr execute();
 };
 
 class GE : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  GE(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~GE() { delete lhs; delete rhs; }
+  GE(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~GE() { }
   Value_ptr execute();
 };
 
 class Add : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Add(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Add() { delete lhs; delete rhs; }
+  Add(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Add() { }
   Value_ptr execute();
 };
 
 class Subtract : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Subtract(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Subtract() { delete lhs; delete rhs; }
+  Subtract(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Subtract() { }
   Value_ptr execute();
 };
 
 class Multiply : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Multiply(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Multiply() { delete lhs; delete rhs; }
+  Multiply(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Multiply() { }
   Value_ptr execute();
 };
 
 class Pointwise_Multiply : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Pointwise_Multiply(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Pointwise_Multiply() { delete lhs; delete rhs; }
+  Pointwise_Multiply(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Pointwise_Multiply() { }
   Value_ptr execute();
 };
 
 class Divide : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Divide(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Divide() { delete lhs; delete rhs; }
+  Divide(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Divide() { }
   Value_ptr execute();
 };
 
 class Pointwise_Divide : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Pointwise_Divide(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Pointwise_Divide() { delete lhs; delete rhs; }
+  Pointwise_Divide(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Pointwise_Divide() { }
   Value_ptr execute();
 };
 
 class Floored_Divide : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Floored_Divide(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Floored_Divide() { delete lhs; delete rhs; }
+  Floored_Divide(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Floored_Divide() { }
   Value_ptr execute();
 };
 
 class Modulo : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Modulo(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Modulo() { delete lhs; delete rhs; }
+  Modulo(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Modulo() { }
   Value_ptr execute();
 };
 
 class Negate : public Code {
-  Code *code;
+  Code_Pointer code;
 public:
-  Negate(Code *c) : code(c) { }
-  ~Negate() { delete code; }
+  Negate(Code_Pointer c) : code(std::move(c)) { }
+  ~Negate() { }
   Value_ptr execute();
 };
 
 class Exponent : public Code {
 private:
-  Code *lhs, *rhs;
+  Code_Pointer lhs;
+  Code_Pointer rhs;
 public:
-  Exponent(Code *l, Code *r) : lhs(l), rhs(r) { }
-  ~Exponent() { delete lhs; delete rhs; }
+  Exponent(Code_Pointer l, Code_Pointer r) : lhs(std::move(l)), rhs(std::move(r)) { }
+  ~Exponent() { }
   Value_ptr execute();
 };
 
